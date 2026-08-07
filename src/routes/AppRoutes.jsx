@@ -32,8 +32,20 @@ import PaymentDetailsPage from "../pages/Payments/PaymentDetailsPage";
 import PaymentEditPage from "../pages/Payments/PaymentEditPage";
 import PaymentReceiptPage from "../pages/Payments/PaymentReceiptPage";
 
+// Dépenses
+import ExpensesPage from "../pages/Expenses/ExpensesPage";
+import ExpenseCreatePage from "../pages/Expenses/ExpenseCreatePage";
+import ExpenseDetailsPage from "../pages/Expenses/ExpenseDetailsPage";
+import ExpenseEditPage from "../pages/Expenses/ExpenseEditPage";
+import StudentsReportPage from "../pages/Reports/StudentsReportPage";
+
 // Rapports
 import ReportsPage from "../pages/Reports/ReportsPage";
+import EnrollmentsReportPage from "../pages/Reports/EnrollmentsReportPage";
+import PaymentsReportPage from "../pages/reports/PaymentsReportPage";
+import ExpensesReportPage from "../pages/Reports/ExpensesReportPage";
+import FinancialReportPage from "../pages//Reports/FinancialReportPage";
+import CashBookReportPage from "../pages/Reports/CashBookReportPage";
 
 export default function AppRoutes() {
 
@@ -43,18 +55,18 @@ export default function AppRoutes() {
 
             <Routes>
 
-                {/* =========================
-                    Route publique
-                ========================== */}
+                {/* =====================================================
+                    ROUTE PUBLIQUE
+                ====================================================== */}
 
                 <Route
                     path="/login"
                     element={<LoginPage />}
                 />
 
-                {/* =========================
-                    Routes protégées
-                ========================== */}
+                {/* =====================================================
+                    ROUTES PROTÉGÉES
+                ====================================================== */}
 
                 <Route
                     path="/"
@@ -65,40 +77,80 @@ export default function AppRoutes() {
                     }
                 >
 
-                    {/* Dashboard */}
+                    {/* =================================================
+                        DASHBOARD
+                    ================================================= */}
 
                     <Route
                         index
                         element={<DashboardPage />}
                     />
 
-                    {/* Étudiants */}
+                    {/* =================================================
+                        ÉTUDIANTS
+                    ================================================= */}
 
                     <Route
                         path="students"
                         element={<StudentsPage />}
                     />
+                        
+                    <Route
+    path="reports/students"
+    element={<StudentsReportPage />}
+/>
+
+<Route
+    path="/reports/enrollments"
+    element={<EnrollmentsReportPage />}
+/>
+
+<Route
+    path="/reports/payments"
+    element={<PaymentsReportPage />}
+/>
+
+<Route
+    path="reports/expenses"
+    element={<ExpensesReportPage />}
+/>
+
+<Route
+    path="/reports/financial-summary"
+    element={<FinancialReportPage />}
+/>
+
+<Route
+  path="/reports/cash-book"
+  element={<CashBookReportPage />}
+/>
 
                     <Route
                         path="students/:id"
                         element={<StudentDetailsPage />}
                     />
 
-                    {/* Formations */}
+                    {/* =================================================
+                        FORMATIONS
+                    ================================================= */}
 
                     <Route
                         path="trainings"
                         element={<TrainingsPage />}
                     />
 
-                    {/* Modules */}
+                    {/* =================================================
+                        MODULES DE FORMATION
+                    ================================================= */}
 
                     <Route
                         path="training-modules"
                         element={<TrainingModulesPage />}
                     />
 
-                    {/* Inscriptions */}
+                    {/* =================================================
+                        INSCRIPTIONS
+                    ================================================= */}
 
                     <Route
                         path="enrollments"
@@ -120,7 +172,9 @@ export default function AppRoutes() {
                         element={<EnrollmentEditPage />}
                     />
 
-                    {/* Paiements */}
+                    {/* =================================================
+                        PAIEMENTS
+                    ================================================= */}
 
                     <Route
                         path="payments"
@@ -147,18 +201,33 @@ export default function AppRoutes() {
                         element={<PaymentReceiptPage />}
                     />
 
-                    {/* Dépenses */}
+                    {/* =================================================
+                        DÉPENSES
+                    ================================================= */}
 
                     <Route
                         path="expenses"
-                        element={
-                            <h1 className="p-8 text-2xl">
-                                Dépenses (à venir)
-                            </h1>
-                        }
+                        element={<ExpensesPage />}
                     />
 
-                    {/* Rapports */}
+                    <Route
+                        path="expenses/create"
+                        element={<ExpenseCreatePage />}
+                    />
+
+                    <Route
+                        path="expenses/:id"
+                        element={<ExpenseDetailsPage />}
+                    />
+
+                    <Route
+                        path="expenses/:id/edit"
+                        element={<ExpenseEditPage />}
+                    />
+
+                    {/* =================================================
+                        RAPPORTS
+                    ================================================= */}
 
                     <Route
                         path="reports"

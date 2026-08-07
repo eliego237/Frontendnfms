@@ -5,6 +5,7 @@ import api from "../../services/api";
 
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
+import PaymentHeader from "./components/PaymentHeader";
 import {
     money,
     formatDate,
@@ -439,55 +440,10 @@ export default function PaymentsPage() {
         <div className="space-y-8">
 
                     {/* ============================================================
-                HEADER
-            ============================================================ */}
+    HEADER
+============================================================ */}
 
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-
-                <div>
-
-                    <h1 className="text-4xl font-extrabold tracking-tight text-slate-800">
-
-                        Gestion des paiements
-
-                    </h1>
-
-                    <p className="mt-2 max-w-2xl text-slate-500">
-
-                        Consultez, recherchez, filtrez et gérez tous les
-                        paiements enregistrés dans votre établissement.
-
-                    </p>
-
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-
-                    <button
-                        onClick={loadPayments}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-100"
-                    >
-
-                        <RefreshCcw size={18} />
-
-                        Actualiser
-
-                    </button>
-
-                    <Link
-                        to="/payments/create"
-                        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-blue-700"
-                    >
-
-                        <Plus size={20} />
-
-                        Nouveau paiement
-
-                    </Link>
-
-                </div>
-
-            </div>
+<PaymentHeader />
 
             {/* ============================================================
                 TABLEAU DE BORD

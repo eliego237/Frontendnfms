@@ -1,69 +1,45 @@
 import axios from "axios";
 
 const api = axios.create({
-
-    baseURL: "http://127.0.0.1:8000/api",
-
+    baseURL: "http://localhost:8000/api",
     headers: {
-
         Accept: "application/json",
-
         "Content-Type": "application/json",
-
     },
-
 });
 
-/*
-|--------------------------------------------------------------------------
-| Ajouter automatiquement le token Laravel
-|--------------------------------------------------------------------------
-*/
-
 api.interceptors.request.use(
-
     (config) => {
-
         const token = localStorage.getItem("token");
 
+        console.log("========== INTERCEPTOR ==========");
+        console.log("Token :", token);
+
         if (token) {
-
             config.headers.Authorization = `Bearer ${token}`;
+        }
 
+        console.log("Authorization :", config.headers.Authorization);
+
+        if (config.headers.toJSON) {
+            console.log("Headers JSON :", config.headers.toJSON());
+        } else {
+            console.log("Headers :", config.headers);
         }
 
         return config;
-
     },
-
     (error) => Promise.reject(error)
-
 );
 
-/*
-|--------------------------------------------------------------------------
-| Déconnecter automatiquement si le token est invalide
-|--------------------------------------------------------------------------
-*/
-
 api.interceptors.response.use(
-
     (response) => response,
-
     (error) => {
-
-        if (error.response?.status === 401) {
-
-            localStorage.removeItem("token");
-
-            window.location.href = "/login";
-
-        }
+        console.log("STATUS :", error.response?.status);
+        console.log("DATA :", error.response?.data);
 
         return Promise.reject(error);
-
     }
-
 );
 
 export default api;

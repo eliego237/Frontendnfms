@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
-import { getEnrollments } from "../../services/enrollmentService";
+import {
+    getEnrollments,
+    deleteEnrollment,
+} from "../../services/enrollmentService";
 
 import EnrollmentHeader from "./components/EnrollmentHeader";
 import EnrollmentStats from "./components/EnrollmentStats";
@@ -32,21 +35,68 @@ export default function EnrollmentsPage() {
 
             const response = await getEnrollments();
 
-            setEnrollments(response.data.data ?? []);
+            setEnrollments(
+                response.data.data ?? []
+            );
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(error);
 
-            toast.error("Impossible de charger les inscriptions.");
+            toast.error(
+                "Impossible de charger les inscriptions."
+            );
+
+        } finally {
+
+            setLoading(false);
 
         }
 
-        finally {
+    }
 
-            setLoading(false);
+    /**
+     * Supprimer une inscription.
+     */
+    async function handleDelete(enrollment) {
+
+        const studentName =
+            `${enrollment.student?.first_name ?? ""} ${enrollment.student?.last_name ?? ""}`
+                .trim();
+
+        const displayName =
+            studentName ||
+            enrollment.enrollment_number ||
+            "cette inscription";
+
+        const confirmed = window.confirm(
+            `Voulez-vous vraiment supprimer l'inscription de ${displayName} ?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            await deleteEnrollment(
+                enrollment.id
+            );
+
+            toast.success(
+                "Inscription supprimée avec succès."
+            );
+
+            await loadEnrollments();
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error(
+                error?.response?.data?.message ||
+                "Impossible de supprimer l'inscription."
+            );
 
         }
 
@@ -57,27 +107,33 @@ export default function EnrollmentsPage() {
         return enrollments.filter((item) => {
 
             const fullname =
-                `${item.student?.first_name ?? ""} ${item.student?.last_name ?? ""}`.toLowerCase();
+                `${item.student?.first_name ?? ""} ${item.student?.last_name ?? ""}`
+                    .toLowerCase();
+
+            const searchValue =
+                search.toLowerCase();
 
             const matchesSearch =
-                fullname.includes(search.toLowerCase()) ||
+                fullname.includes(searchValue) ||
                 item.enrollment_number
                     ?.toLowerCase()
-                    .includes(search.toLowerCase());
+                    .includes(searchValue);
 
             const matchesStatus =
-                !status || item.status === status;
+                !status ||
+                item.status === status;
 
-            return matchesSearch && matchesStatus;
+            return (
+                matchesSearch &&
+                matchesStatus
+            );
 
         });
 
     }, [
-
         enrollments,
         search,
         status,
-
     ]);
 
     const stats = useMemo(() => ({
@@ -134,6 +190,7 @@ export default function EnrollmentsPage() {
 
             <EnrollmentTable
                 enrollments={filteredEnrollments}
+                onDelete={handleDelete}
             />
 
         </div>

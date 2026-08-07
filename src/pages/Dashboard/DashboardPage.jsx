@@ -1,43 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-    Activity,
-    ArrowDownRight,
-    ArrowUpRight,
-    BookOpen,
-    CalendarDays,
-    CheckCircle2,
-    CircleDollarSign,
-    CreditCard,
-    GraduationCap,
-    Loader2,
-    RefreshCw,
-    TrendingUp,
-    UserRound,
-    Wallet,
-    AlertCircle,
-} from "lucide-react";
 import toast from "react-hot-toast";
 
+import {
+    RefreshCw,
+    Users,
+    GraduationCap,
+    BookOpen,
+    TrendingUp,
+    Wallet,
+    ArrowUpRight,
+    ArrowDownRight,
+    CreditCard,
+    Receipt,
+    Landmark,
+    CalendarDays,
+    Eye,
+} from "lucide-react";
+
 import { getDashboard } from "../../services/dashboardService";
+
+import PaymentsChart from "../../components/charts/PaymentsChart";
 
 export default function DashboardPage() {
 
     const [dashboard, setDashboard] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState(null);
 
-    async function loadDashboard(showRefresh = false) {
+    async function loadDashboard(showToast = false) {
 
         try {
 
-            if (showRefresh) {
+            if (showToast) {
                 setRefreshing(true);
             } else {
                 setLoading(true);
             }
-
-            setError(null);
 
             const data = await getDashboard();
 
@@ -45,20 +43,22 @@ export default function DashboardPage() {
 
             setDashboard(data);
 
-        } catch (err) {
-
-            console.error("Erreur Dashboard :", err);
-
-            const message =
-                err?.response?.data?.message ||
-                err?.message ||
-                "Impossible de charger le tableau de bord.";
-
-            setError(message);
-
-            if (showRefresh) {
-                toast.error(message);
+            if (showToast) {
+                toast.success("Tableau de bord actualisé.");
             }
+
+        } catch (error) {
+
+            console.error("Erreur Dashboard :", error);
+
+            if (error.response) {
+                console.error("Status :", error.response.status);
+                console.error("Data :", error.response.data);
+            }
+
+            toast.error(
+                "Impossible de charger le tableau de bord."
+            );
 
         } finally {
 
@@ -75,44 +75,134 @@ export default function DashboardPage() {
 
     }, []);
 
-    const formatMoney = (value) => {
+    const paymentsChart = useMemo(() => {
 
-        const amount = Number(value ?? 0);
+        return dashboard?.payments_chart ?? [];
 
-        return `${amount.toLocaleString("fr-FR")} FCFA`;
+    }, [dashboard]);
 
-    };
+    const latestEnrollments = useMemo(() => {
 
-    const statistics = dashboard?.statistics ?? {};
+        return dashboard?.latest?.enrollments ?? [];
 
-    const finance = dashboard?.finance ?? {};
+    }, [dashboard]);
 
-    const chart = dashboard?.payments_chart ?? [];
+    const latestPayments = useMemo(() => {
 
-    const latest = dashboard?.latest ?? {};
+        return dashboard?.latest?.payments ?? [];
 
-    const enrollments = latest.enrollments ?? [];
+    }, [dashboard]);
 
-    const payments = latest.payments ?? [];
+    const latestExpenses = useMemo(() => {
 
-    const expenses = latest.expenses ?? [];
+        return dashboard?.latest?.expenses ?? [];
 
-    const transactions = latest.transactions ?? [];
+    }, [dashboard]);
 
-    const paymentRate = Number(finance.payment_rate ?? 0);
+    const latestTransactions = useMemo(() => {
 
-    const maxChartValue = useMemo(() => {
+        return dashboard?.latest?.transactions ?? [];
 
-        if (!chart.length) {
-            return 1;
+    }, [dashboard]);
+
+    function formatMoney(value) {
+
+        return `${Number(value ?? 0).toLocaleString(
+            "fr-FR"
+        )} FCFA`;
+
+    }
+
+    function formatDate(date) {
+
+        if (!date) {
+            return "—";
         }
 
-        return Math.max(
-            ...chart.map((item) => Number(item.amount ?? 0)),
-            1
+        return new Date(date).toLocaleDateString(
+            "fr-FR",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }
         );
 
-    }, [chart]);
+    }
+
+    function getInitials(student) {
+
+        if (!student) {
+            return "?";
+        }
+
+        const first =
+            student.first_name?.charAt(0) ?? "";
+
+        const last =
+            student.last_name?.charAt(0) ?? "";
+
+        return `${first}${last}`.toUpperCase();
+
+    }
+
+    function getStudentName(student) {
+
+        if (!student) {
+            return "Étudiant inconnu";
+        }
+
+        return `${student.first_name ?? ""} ${
+            student.last_name ?? ""
+        }`.trim();
+
+    }
+
+    function getStatusLabel(status) {
+
+        switch (status) {
+
+            case "paid":
+                return "Soldée";
+
+            case "partial":
+                return "Partielle";
+
+            case "pending":
+                return "En attente";
+
+            case "cancelled":
+                return "Annulée";
+
+            default:
+                return status ?? "—";
+
+        }
+
+    }
+
+    function getStatusClass(status) {
+
+        switch (status) {
+
+            case "paid":
+                return "bg-green-100 text-green-700";
+
+            case "partial":
+                return "bg-orange-100 text-orange-700";
+
+            case "pending":
+                return "bg-red-100 text-red-700";
+
+            case "cancelled":
+                return "bg-slate-100 text-slate-600";
+
+            default:
+                return "bg-slate-100 text-slate-600";
+
+        }
+
+    }
 
     if (loading) {
 
@@ -122,24 +212,11 @@ export default function DashboardPage() {
 
                 <div className="text-center">
 
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100">
+                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
 
-                        <Loader2
-                            size={32}
-                            className="animate-spin text-blue-600"
-                        />
+                    <p className="font-semibold text-slate-600">
 
-                    </div>
-
-                    <h2 className="mt-5 text-xl font-bold text-slate-800">
-
-                        Chargement du tableau de bord
-
-                    </h2>
-
-                    <p className="mt-2 text-slate-500">
-
-                        Récupération des dernières données...
+                        Chargement du tableau de bord...
 
                     </p>
 
@@ -151,48 +228,34 @@ export default function DashboardPage() {
 
     }
 
-    if (error || !dashboard) {
+    if (!dashboard) {
 
         return (
 
-            <div className="rounded-3xl border border-red-100 bg-white p-12 shadow-sm">
+            <div className="rounded-3xl border border-red-100 bg-white p-16 text-center shadow-sm">
 
-                <div className="mx-auto max-w-xl text-center">
+                <h2 className="text-3xl font-extrabold text-red-600">
 
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-red-100">
+                    Impossible de charger le Dashboard
 
-                        <AlertCircle
-                            size={40}
-                            className="text-red-600"
-                        />
+                </h2>
 
-                    </div>
+                <p className="mt-3 text-slate-500">
 
-                    <h2 className="mt-6 text-3xl font-extrabold text-red-600">
+                    Vérifiez la connexion avec le serveur.
 
-                        Impossible de charger le Dashboard
+                </p>
 
-                    </h2>
+                <button
+                    onClick={() => loadDashboard()}
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
+                >
 
-                    <p className="mt-3 text-slate-500">
+                    <RefreshCw size={18} />
 
-                        {error ||
-                            "Vérifiez la connexion avec le serveur."}
+                    Réessayer
 
-                    </p>
-
-                    <button
-                        onClick={() => loadDashboard(true)}
-                        className="mt-7 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-blue-700"
-                    >
-
-                        <RefreshCw size={18} />
-
-                        Réessayer
-
-                    </button>
-
-                </div>
+                </button>
 
             </div>
 
@@ -200,43 +263,80 @@ export default function DashboardPage() {
 
     }
 
+    const statistics = dashboard.statistics ?? {};
+    const finance = dashboard.finance ?? {};
+
+    const statsCards = [
+
+        {
+            title: "Étudiants",
+            value: statistics.students ?? 0,
+            subtitle: "Étudiants enregistrés",
+            icon: Users,
+            gradient: "from-blue-500 to-cyan-500",
+        },
+
+        {
+            title: "Formations",
+            value: statistics.trainings ?? 0,
+            subtitle: "Formations disponibles",
+            icon: GraduationCap,
+            gradient: "from-violet-500 to-purple-500",
+        },
+
+        {
+            title: "Inscriptions",
+            value: statistics.enrollments ?? 0,
+            subtitle: "Inscriptions enregistrées",
+            icon: BookOpen,
+            gradient: "from-orange-500 to-amber-500",
+        },
+
+        {
+            title: "Taux de paiement",
+            value: `${Number(
+                finance.payment_rate ?? 0
+            ).toFixed(2)} %`,
+            subtitle: "Progression globale",
+            icon: TrendingUp,
+            gradient: "from-emerald-500 to-green-500",
+        },
+
+    ];
+
     return (
 
-        <div className="space-y-8">
+        <div className="space-y-8 pb-12">
 
             {/* =====================================================
                 HEADER
             ====================================================== */}
 
-            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 p-8 text-white shadow-xl">
+            <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-8 text-white shadow-xl">
 
-                <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10" />
+                <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10" />
 
-                <div className="absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-white/5" />
+                <div className="absolute bottom-[-120px] left-[35%] h-72 w-72 rounded-full bg-white/10" />
 
-                <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+                <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
 
                     <div>
 
-                        <div className="mb-3 flex items-center gap-2 text-blue-100">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-100">
 
-                            <CalendarDays size={18} />
+                            <CalendarDays size={17} />
 
-                            <span className="text-sm font-medium">
-
-                                Vue générale du centre
-
-                            </span>
+                            Vue générale du centre
 
                         </div>
 
-                        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+                        <h1 className="text-4xl font-black tracking-tight md:text-5xl">
 
                             Dashboard
 
                         </h1>
 
-                        <p className="mt-3 max-w-2xl text-lg text-blue-100">
+                        <p className="mt-3 max-w-2xl text-lg leading-relaxed text-blue-100">
 
                             Suivez en temps réel les étudiants,
                             formations, inscriptions et finances
@@ -249,7 +349,7 @@ export default function DashboardPage() {
                     <button
                         onClick={() => loadDashboard(true)}
                         disabled={refreshing}
-                        className="inline-flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 font-bold text-blue-700 shadow-lg transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-70"
+                        className="relative inline-flex items-center justify-center gap-3 rounded-2xl bg-white px-7 py-4 font-bold text-blue-700 shadow-lg transition hover:scale-[1.02] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
                     >
 
                         <RefreshCw
@@ -272,47 +372,70 @@ export default function DashboardPage() {
             </section>
 
             {/* =====================================================
-                KPI PRINCIPAUX
+                KPI
             ====================================================== */}
 
             <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
 
-                <DashboardCard
-                    title="Étudiants"
-                    value={statistics.students ?? 0}
-                    subtitle="Étudiants enregistrés"
-                    icon={UserRound}
-                    gradient="from-blue-600 to-cyan-500"
-                />
+                {statsCards.map((card) => {
 
-                <DashboardCard
-                    title="Formations"
-                    value={statistics.trainings ?? 0}
-                    subtitle="Formations disponibles"
-                    icon={GraduationCap}
-                    gradient="from-violet-600 to-purple-500"
-                />
+                    const Icon = card.icon;
 
-                <DashboardCard
-                    title="Inscriptions"
-                    value={statistics.enrollments ?? 0}
-                    subtitle="Inscriptions enregistrées"
-                    icon={BookOpen}
-                    gradient="from-orange-500 to-amber-500"
-                />
+                    return (
 
-                <DashboardCard
-                    title="Taux de paiement"
-                    value={`${paymentRate.toFixed(2)} %`}
-                    subtitle="Progression globale"
-                    icon={TrendingUp}
-                    gradient="from-emerald-600 to-green-500"
-                />
+                        <div
+                            key={card.title}
+                            className="relative overflow-hidden rounded-[1.7rem] border border-slate-100 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                        >
+
+                            <div
+                                className={`absolute left-0 right-0 top-0 h-1.5 bg-gradient-to-r ${card.gradient}`}
+                            />
+
+                            <div className="flex items-center justify-between">
+
+                                <div>
+
+                                    <p className="text-sm font-medium text-slate-500">
+
+                                        {card.title}
+
+                                    </p>
+
+                                    <h2 className="mt-3 text-3xl font-black text-slate-900">
+
+                                        {card.value}
+
+                                    </h2>
+
+                                    <p className="mt-2 text-xs text-slate-400">
+
+                                        {card.subtitle}
+
+                                    </p>
+
+                                </div>
+
+                                <div
+                                    className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${card.gradient} text-white shadow-lg`}
+                                >
+
+                                    <Icon size={25} />
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    );
+
+                })}
 
             </section>
 
             {/* =====================================================
-                FINANCES
+                FINANCE
             ====================================================== */}
 
             <section>
@@ -321,13 +444,13 @@ export default function DashboardPage() {
 
                     <div>
 
-                        <h2 className="text-2xl font-extrabold text-slate-900">
+                        <h2 className="text-2xl font-black text-slate-900">
 
                             Situation financière
 
                         </h2>
 
-                        <p className="mt-1 text-slate-500">
+                        <p className="mt-1 text-sm text-slate-500">
 
                             Vue synthétique des finances du centre.
 
@@ -335,7 +458,10 @@ export default function DashboardPage() {
 
                     </div>
 
-                    <Wallet className="text-slate-400" />
+                    <Wallet
+                        className="text-slate-400"
+                        size={26}
+                    />
 
                 </div>
 
@@ -346,7 +472,7 @@ export default function DashboardPage() {
                         value={formatMoney(
                             finance.expected_revenue
                         )}
-                        icon={CircleDollarSign}
+                        icon={CreditCard}
                         iconClass="bg-blue-100 text-blue-600"
                     />
 
@@ -385,23 +511,21 @@ export default function DashboardPage() {
                 GRAPHIQUE + STATUTS
             ====================================================== */}
 
-            <section className="grid gap-6 xl:grid-cols-3">
+            <section className="grid gap-6 xl:grid-cols-[2fr_1fr]">
 
-                {/* Graphique */}
+                <div className="rounded-[1.7rem] border border-slate-200 bg-white p-7 shadow-sm">
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm xl:col-span-2">
-
-                    <div className="mb-8 flex items-center justify-between">
+                    <div className="mb-5 flex items-start justify-between">
 
                         <div>
 
-                            <h2 className="text-2xl font-extrabold text-slate-900">
+                            <h2 className="text-2xl font-black text-slate-900">
 
                                 Évolution des paiements
 
                             </h2>
 
-                            <p className="mt-1 text-slate-500">
+                            <p className="mt-1 text-sm text-slate-500">
 
                                 Paiements enregistrés par mois.
 
@@ -409,88 +533,31 @@ export default function DashboardPage() {
 
                         </div>
 
-                        <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
 
-                            <Activity size={22} />
+                            <TrendingUp size={23} />
 
                         </div>
 
                     </div>
 
-                    <div className="flex h-72 items-end gap-3 overflow-x-auto">
-
-                        {chart.map((item, index) => {
-
-                            const amount =
-                                Number(item.amount ?? 0);
-
-                            const height =
-                                amount > 0
-                                    ? Math.max(
-                                        (amount /
-                                            maxChartValue) *
-                                            100,
-                                        5
-                                    )
-                                    : 3;
-
-                            return (
-
-                                <div
-                                    key={`${item.month}-${index}`}
-                                    className="group flex min-w-[48px] flex-1 flex-col items-center justify-end gap-3"
-                                >
-
-                                    <div className="relative flex h-56 w-full items-end justify-center">
-
-                                        <div
-                                            className="w-full max-w-[42px] rounded-t-xl bg-gradient-to-t from-blue-600 to-indigo-400 transition-all duration-500 group-hover:from-indigo-600 group-hover:to-purple-500"
-                                            style={{
-                                                height: `${height}%`,
-                                            }}
-                                        />
-
-                                        {amount > 0 && (
-
-                                            <div className="absolute -top-8 rounded-lg bg-slate-900 px-2 py-1 text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100">
-
-                                                {formatMoney(amount)}
-
-                                            </div>
-
-                                        )}
-
-                                    </div>
-
-                                    <span className="text-xs font-semibold text-slate-500">
-
-                                        {item.month}
-
-                                    </span>
-
-                                </div>
-
-                            );
-
-                        })}
-
-                    </div>
+                    <PaymentsChart
+                        data={paymentsChart}
+                    />
 
                 </div>
 
-                {/* Statuts */}
+                <div className="rounded-[1.7rem] border border-slate-200 bg-white p-7 shadow-sm">
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+                    <div className="mb-6">
 
-                    <div className="mb-7">
-
-                        <h2 className="text-2xl font-extrabold text-slate-900">
+                        <h2 className="text-2xl font-black text-slate-900">
 
                             Inscriptions
 
                         </h2>
 
-                        <p className="mt-1 text-slate-500">
+                        <p className="mt-1 text-sm text-slate-500">
 
                             Répartition par statut.
 
@@ -498,54 +565,40 @@ export default function DashboardPage() {
 
                     </div>
 
-                    <div className="space-y-5">
+                    <StatusRow
+                        label="En attente"
+                        value={statistics.pending_enrollments ?? 0}
+                        icon="!"
+                        className="bg-red-100 text-red-600"
+                    />
 
-                        <StatusRow
-                            label="En attente"
-                            value={
-                                statistics.pending_enrollments ??
-                                0
-                            }
-                            color="bg-red-500"
-                            icon={AlertCircle}
-                        />
+                    <StatusRow
+                        label="Paiement partiel"
+                        value={statistics.partial_enrollments ?? 0}
+                        icon="▣"
+                        className="bg-orange-100 text-orange-600"
+                    />
 
-                        <StatusRow
-                            label="Paiement partiel"
-                            value={
-                                statistics.partial_enrollments ??
-                                0
-                            }
-                            color="bg-orange-500"
-                            icon={Wallet}
-                        />
+                    <StatusRow
+                        label="Soldées"
+                        value={statistics.paid_enrollments ?? 0}
+                        icon="✓"
+                        className="bg-green-100 text-green-600"
+                    />
 
-                        <StatusRow
-                            label="Soldées"
-                            value={
-                                statistics.paid_enrollments ??
-                                0
-                            }
-                            color="bg-green-500"
-                            icon={CheckCircle2}
-                        />
+                    <div className="mt-5 rounded-2xl bg-slate-50 p-5">
 
-                        <div className="mt-7 rounded-2xl bg-slate-50 p-5">
+                        <p className="text-sm text-slate-500">
 
-                            <p className="text-sm text-slate-500">
+                            Étudiants avec un solde
 
-                                Étudiants avec un solde
+                        </p>
 
-                            </p>
+                        <p className="mt-2 text-3xl font-black text-slate-900">
 
-                            <p className="mt-2 text-3xl font-extrabold text-slate-900">
+                            {statistics.students_with_balance ?? 0}
 
-                                {statistics.students_with_balance ??
-                                    0}
-
-                            </p>
-
-                        </div>
+                        </p>
 
                     </div>
 
@@ -557,76 +610,44 @@ export default function DashboardPage() {
                 DERNIÈRES INSCRIPTIONS
             ====================================================== */}
 
-            <section className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-
-                <div className="border-b border-slate-100 p-7">
-
-                    <div className="flex items-center justify-between">
-
-                        <div>
-
-                            <h2 className="text-2xl font-extrabold text-slate-900">
-
-                                Dernières inscriptions
-
-                            </h2>
-
-                            <p className="mt-1 text-slate-500">
-
-                                Les dernières inscriptions enregistrées.
-
-                            </p>
-
-                        </div>
-
-                        <BookOpen className="text-slate-400" />
-
-                    </div>
-
-                </div>
+            <DashboardSection
+                title="Dernières inscriptions"
+                subtitle="Les dernières inscriptions enregistrées."
+                icon={BookOpen}
+                actionText="Voir toutes"
+                actionLink="/enrollments"
+            >
 
                 <div className="overflow-x-auto">
 
-                    <table className="w-full">
+                    <table className="w-full min-w-[850px]">
 
-                        <thead className="bg-slate-50">
+                        <thead>
 
-                            <tr className="text-left text-sm text-slate-500">
+                            <tr className="border-b bg-slate-50 text-left text-sm text-slate-500">
 
-                                <th className="px-7 py-4">
-
+                                <th className="px-7 py-4 font-semibold">
                                     Étudiant
-
                                 </th>
 
-                                <th className="px-7 py-4">
-
+                                <th className="px-5 py-4 font-semibold">
                                     Formation
-
                                 </th>
 
-                                <th className="px-7 py-4">
-
+                                <th className="px-5 py-4 font-semibold">
                                     Total
-
                                 </th>
 
-                                <th className="px-7 py-4">
-
+                                <th className="px-5 py-4 font-semibold">
                                     Payé
-
                                 </th>
 
-                                <th className="px-7 py-4">
-
+                                <th className="px-5 py-4 font-semibold">
                                     Solde
-
                                 </th>
 
-                                <th className="px-7 py-4">
-
+                                <th className="px-5 py-4 font-semibold">
                                     Statut
-
                                 </th>
 
                             </tr>
@@ -635,95 +656,109 @@ export default function DashboardPage() {
 
                         <tbody>
 
-                            {enrollments.map((item) => (
+                            {latestEnrollments.length === 0 ? (
 
-                                <tr
-                                    key={item.id}
-                                    className="border-t border-slate-100 transition hover:bg-slate-50"
-                                >
+                                <EmptyRow
+                                    colSpan={6}
+                                    text="Aucune inscription récente."
+                                />
 
-                                    <td className="px-7 py-5">
+                            ) : (
 
-                                        <div className="flex items-center gap-3">
+                                latestEnrollments.map(
+                                    (enrollment) => (
 
-                                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
+                                        <tr
+                                            key={enrollment.id}
+                                            className="border-b last:border-0 hover:bg-slate-50"
+                                        >
 
-                                                {getInitials(
-                                                    item.student
+                                            <td className="px-7 py-5">
+
+                                                <div className="flex items-center gap-3">
+
+                                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
+
+                                                        {getInitials(
+                                                            enrollment.student
+                                                        )}
+
+                                                    </div>
+
+                                                    <div>
+
+                                                        <p className="font-bold text-slate-900">
+
+                                                            {getStudentName(
+                                                                enrollment.student
+                                                            )}
+
+                                                        </p>
+
+                                                        <p className="text-xs text-slate-500">
+
+                                                            {enrollment.enrollment_number}
+
+                                                        </p>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </td>
+
+                                            <td className="px-5 py-5 font-medium text-slate-700">
+
+                                                {enrollment.training?.title ?? "—"}
+
+                                            </td>
+
+                                            <td className="px-5 py-5 font-semibold">
+
+                                                {formatMoney(
+                                                    enrollment.total_amount
                                                 )}
 
-                                            </div>
+                                            </td>
 
-                                            <div>
+                                            <td className="px-5 py-5 font-semibold text-green-600">
 
-                                                <p className="font-bold text-slate-900">
+                                                {formatMoney(
+                                                    enrollment.amount_paid
+                                                )}
 
-                                                    {item.student?.first_name ??
-                                                        ""}{" "}
+                                            </td>
 
-                                                    {item.student?.last_name ??
-                                                        ""}
+                                            <td className="px-5 py-5 font-semibold text-red-600">
 
-                                                </p>
+                                                {formatMoney(
+                                                    enrollment.balance
+                                                )}
 
-                                                <p className="text-sm text-slate-500">
+                                            </td>
 
-                                                    {item.enrollment_number}
+                                            <td className="px-5 py-5">
 
-                                                </p>
+                                                <span
+                                                    className={`rounded-full px-4 py-2 text-xs font-bold ${getStatusClass(
+                                                        enrollment.status
+                                                    )}`}
+                                                >
 
-                                            </div>
+                                                    {getStatusLabel(
+                                                        enrollment.status
+                                                    )}
 
-                                        </div>
+                                                </span>
 
-                                    </td>
+                                            </td>
 
-                                    <td className="px-7 py-5">
+                                        </tr>
 
-                                        <p className="font-semibold text-slate-800">
+                                    )
+                                )
 
-                                            {item.training?.title ??
-                                                "Formation inconnue"}
-
-                                        </p>
-
-                                    </td>
-
-                                    <td className="px-7 py-5 font-semibold">
-
-                                        {formatMoney(
-                                            item.total_amount
-                                        )}
-
-                                    </td>
-
-                                    <td className="px-7 py-5 font-semibold text-green-600">
-
-                                        {formatMoney(
-                                            item.amount_paid
-                                        )}
-
-                                    </td>
-
-                                    <td className="px-7 py-5 font-semibold text-red-600">
-
-                                        {formatMoney(
-                                            item.balance
-                                        )}
-
-                                    </td>
-
-                                    <td className="px-7 py-5">
-
-                                        <StatusBadge
-                                            status={item.status}
-                                        />
-
-                                    </td>
-
-                                </tr>
-
-                            ))}
+                            )}
 
                         </tbody>
 
@@ -731,39 +766,330 @@ export default function DashboardPage() {
 
                 </div>
 
+            </DashboardSection>
+
+            {/* =====================================================
+                DERNIERS PAIEMENTS
+            ====================================================== */}
+
+            <DashboardSection
+                title="Derniers paiements"
+                subtitle="Les dernières opérations d'encaissement."
+                icon={CreditCard}
+                actionText="Voir les paiements"
+                actionLink="/payments"
+            >
+
+                <div className="divide-y divide-slate-100">
+
+                    {latestPayments.length === 0 ? (
+
+                        <EmptyState text="Aucun paiement récent." />
+
+                    ) : (
+
+                        latestPayments.map((payment) => {
+
+                            const student =
+                                payment.enrollment?.student;
+
+                            return (
+
+                                <div
+                                    key={payment.id}
+                                    className="flex flex-col gap-4 px-7 py-5 md:flex-row md:items-center md:justify-between"
+                                >
+
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-green-600">
+
+                                            <ArrowUpRight size={21} />
+
+                                        </div>
+
+                                        <div>
+
+                                            <p className="font-bold text-slate-900">
+
+                                                {getStudentName(
+                                                    student
+                                                )}
+
+                                            </p>
+
+                                            <p className="text-sm text-slate-500">
+
+                                                {payment.receipt_number ??
+                                                    "Paiement"}
+
+                                                {" • "}
+
+                                                {payment.paymentMethod?.name ??
+                                                    payment.payment_method?.name ??
+                                                    "Moyen non précisé"}
+
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div className="text-left md:text-right">
+
+                                        <p className="font-black text-green-600">
+
+                                            + {formatMoney(
+                                                payment.amount
+                                            )}
+
+                                        </p>
+
+                                        <p className="text-xs text-slate-400">
+
+                                            {formatDate(
+                                                payment.payment_date
+                                            )}
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            );
+
+                        })
+
+                    )}
+
+                </div>
+
+            </DashboardSection>
+
+            {/* =====================================================
+                DEPENSES + CAISSE
+            ====================================================== */}
+
+            <section className="grid gap-6 xl:grid-cols-2">
+
+                <DashboardSection
+                    title="Dernières dépenses"
+                    subtitle="Les dernières dépenses enregistrées."
+                    icon={Receipt}
+                    actionText="Voir les dépenses"
+                    actionLink="/expenses"
+                >
+
+                    <div className="divide-y divide-slate-100">
+
+                        {latestExpenses.length === 0 ? (
+
+                            <EmptyState text="Aucune dépense récente." />
+
+                        ) : (
+
+                            latestExpenses.map((expense) => (
+
+                                <div
+                                    key={expense.id}
+                                    className="flex items-center justify-between gap-4 px-7 py-5"
+                                >
+
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-100 text-red-600">
+
+                                            <ArrowDownRight size={21} />
+
+                                        </div>
+
+                                        <div>
+
+                                            <p className="font-bold text-slate-900">
+
+                                                {expense.title ??
+                                                    expense.category ??
+                                                    "Dépense"}
+
+                                            </p>
+
+                                            <p className="text-sm text-slate-500">
+
+                                                {expense.expense_number ??
+                                                    "—"}
+
+                                                {" • "}
+
+                                                {formatDate(
+                                                    expense.expense_date
+                                                )}
+
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+                                    <p className="font-black text-red-600">
+
+                                        - {formatMoney(
+                                            expense.amount
+                                        )}
+
+                                    </p>
+
+                                </div>
+
+                            ))
+
+                        )}
+
+                    </div>
+
+                </DashboardSection>
+
+                <DashboardSection
+                    title="Dernières opérations de caisse"
+                    subtitle="Les mouvements récents de la caisse."
+                    icon={Landmark}
+                >
+
+                    <div className="divide-y divide-slate-100">
+
+                        {latestTransactions.length === 0 ? (
+
+                            <EmptyState text="Aucune opération récente." />
+
+                        ) : (
+
+                            latestTransactions.map(
+                                (transaction) => {
+
+                                    const income =
+                                        transaction.type ===
+                                        "Entrée";
+
+                                    return (
+
+                                        <div
+                                            key={transaction.id}
+                                            className="flex items-center justify-between gap-4 px-7 py-5"
+                                        >
+
+                                            <div className="flex items-center gap-4">
+
+                                                <div
+                                                    className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                                                        income
+                                                            ? "bg-green-100 text-green-600"
+                                                            : "bg-red-100 text-red-600"
+                                                    }`}
+                                                >
+
+                                                    {income ? (
+                                                        <ArrowUpRight
+                                                            size={21}
+                                                        />
+                                                    ) : (
+                                                        <ArrowDownRight
+                                                            size={21}
+                                                        />
+                                                    )}
+
+                                                </div>
+
+                                                <div>
+
+                                                    <p className="font-bold text-slate-900">
+
+                                                        {transaction.category ??
+                                                            transaction.description ??
+                                                            "Opération de caisse"}
+
+                                                    </p>
+
+                                                    <p className="text-sm text-slate-500">
+
+                                                        {transaction.transaction_number ??
+                                                            "—"}
+
+                                                        {" • "}
+
+                                                        {formatDate(
+                                                            transaction.transaction_date
+                                                        )}
+
+                                                    </p>
+
+                                                </div>
+
+                                            </div>
+
+                                            <p
+                                                className={`font-black ${
+                                                    income
+                                                        ? "text-green-600"
+                                                        : "text-red-600"
+                                                }`}
+                                            >
+
+                                                {income ? "+" : "-"}
+
+                                                {" "}
+
+                                                {formatMoney(
+                                                    transaction.amount
+                                                )}
+
+                                            </p>
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )
+
+                        )}
+
+                    </div>
+
+                </DashboardSection>
+
             </section>
 
             {/* =====================================================
-                RÉSUMÉ ACTIVITÉ
+                MINI FINANCE CARDS
             ====================================================== */}
 
-            <section className="grid gap-6 md:grid-cols-3">
+            <section className="grid gap-5 md:grid-cols-3">
 
-                <ActivityCard
+                <MiniFinanceCard
                     title="Paiements du mois"
                     value={formatMoney(
                         finance.payments_month
                     )}
+                    subtitle="Total encaissé ce mois"
                     icon={CreditCard}
-                    description="Total encaissé ce mois"
                 />
 
-                <ActivityCard
+                <MiniFinanceCard
                     title="Dépenses du mois"
                     value={formatMoney(
                         finance.expenses_month
                     )}
+                    subtitle="Dépenses enregistrées"
                     icon={ArrowDownRight}
-                    description="Dépenses enregistrées"
                 />
 
-                <ActivityCard
+                <MiniFinanceCard
                     title="Paiements aujourd'hui"
                     value={formatMoney(
                         finance.payments_today
                     )}
-                    icon={CircleDollarSign}
-                    description="Encaissements du jour"
+                    subtitle="Encaissements du jour"
+                    icon={Wallet}
                 />
 
             </section>
@@ -776,61 +1102,8 @@ export default function DashboardPage() {
 
 
 /* ================================================================
-   COMPOSANTS INTERNES
+   FINANCE CARD
 ================================================================ */
-
-function DashboardCard({
-    title,
-    value,
-    subtitle,
-    icon: Icon,
-    gradient,
-}) {
-
-    return (
-
-        <div className="group overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-xl">
-
-            <div className={`bg-gradient-to-r ${gradient} p-1`} />
-
-            <div className="flex items-center justify-between p-6">
-
-                <div>
-
-                    <p className="text-sm font-semibold text-slate-500">
-
-                        {title}
-
-                    </p>
-
-                    <p className="mt-2 text-3xl font-extrabold text-slate-900">
-
-                        {value}
-
-                    </p>
-
-                    <p className="mt-1 text-xs text-slate-400">
-
-                        {subtitle}
-
-                    </p>
-
-                </div>
-
-                <div className={`rounded-2xl bg-gradient-to-r ${gradient} p-4 text-white shadow-lg`}>
-
-                    <Icon size={25} />
-
-                </div>
-
-            </div>
-
-        </div>
-
-    );
-
-}
-
 
 function FinanceCard({
     title,
@@ -841,31 +1114,29 @@ function FinanceCard({
 
     return (
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-lg">
+        <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
 
-            <div className="flex items-center gap-4">
+            <div>
 
-                <div className={`rounded-2xl p-4 ${iconClass}`}>
+                <p className="text-sm text-slate-500">
 
-                    <Icon size={24} />
+                    {title}
 
-                </div>
+                </p>
 
-                <div className="min-w-0">
+                <p className="mt-2 text-xl font-black text-slate-900">
 
-                    <p className="text-sm text-slate-500">
+                    {value}
 
-                        {title}
+                </p>
 
-                    </p>
+            </div>
 
-                    <p className="mt-1 truncate text-xl font-extrabold text-slate-900">
+            <div
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl ${iconClass}`}
+            >
 
-                        {value}
-
-                    </p>
-
-                </div>
+                <Icon size={24} />
 
             </div>
 
@@ -876,22 +1147,28 @@ function FinanceCard({
 }
 
 
+/* ================================================================
+   STATUS ROW
+================================================================ */
+
 function StatusRow({
     label,
     value,
-    color,
-    icon: Icon,
+    icon,
+    className,
 }) {
 
     return (
 
-        <div className="flex items-center justify-between rounded-2xl border border-slate-100 p-4">
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-slate-100 p-4">
 
             <div className="flex items-center gap-3">
 
-                <div className={`rounded-xl p-2 text-white ${color}`}>
+                <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold ${className}`}
+                >
 
-                    <Icon size={17} />
+                    {icon}
 
                 </div>
 
@@ -903,7 +1180,7 @@ function StatusRow({
 
             </div>
 
-            <span className="text-xl font-extrabold text-slate-900">
+            <span className="text-lg font-black text-slate-900">
 
                 {value}
 
@@ -916,92 +1193,123 @@ function StatusRow({
 }
 
 
-function StatusBadge({ status }) {
+/* ================================================================
+   SECTION
+================================================================ */
 
-    const config = {
-
-        pending: {
-            label: "En attente",
-            className:
-                "bg-red-100 text-red-700",
-        },
-
-        partial: {
-            label: "Partielle",
-            className:
-                "bg-orange-100 text-orange-700",
-        },
-
-        paid: {
-            label: "Soldée",
-            className:
-                "bg-green-100 text-green-700",
-        },
-
-    };
-
-    const current =
-        config[status] ?? {
-            label: status ?? "Inconnu",
-            className:
-                "bg-slate-100 text-slate-700",
-        };
+function DashboardSection({
+    title,
+    subtitle,
+    icon: Icon,
+    actionText,
+    actionLink,
+    children,
+}) {
 
     return (
 
-        <span
-            className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${current.className}`}
-        >
+        <section className="overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white shadow-sm">
 
-            {current.label}
+            <div className="flex items-center justify-between border-b border-slate-100 px-7 py-6">
 
-        </span>
+                <div className="flex items-center gap-4">
+
+                    <div>
+
+                        <h2 className="text-2xl font-black text-slate-900">
+
+                            {title}
+
+                        </h2>
+
+                        <p className="mt-1 text-sm text-slate-500">
+
+                            {subtitle}
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+                {actionText && actionLink ? (
+
+                    <a
+                        href={actionLink}
+                        className="hidden items-center gap-2 rounded-xl bg-slate-50 px-4 py-2 text-sm font-bold text-blue-600 transition hover:bg-blue-50 md:inline-flex"
+                    >
+
+                        {actionText}
+
+                        <Eye size={16} />
+
+                    </a>
+
+                ) : (
+
+                    Icon && (
+
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+
+                            <Icon size={21} />
+
+                        </div>
+
+                    )
+
+                )}
+
+            </div>
+
+            {children}
+
+        </section>
 
     );
 
 }
 
 
-function ActivityCard({
+/* ================================================================
+   MINI CARD
+================================================================ */
+
+function MiniFinanceCard({
     title,
     value,
+    subtitle,
     icon: Icon,
-    description,
 }) {
 
     return (
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
 
-            <div className="flex items-center justify-between">
+            <div>
 
-                <div>
+                <p className="text-sm text-slate-500">
 
-                    <p className="text-sm font-semibold text-slate-500">
+                    {title}
 
-                        {title}
+                </p>
 
-                    </p>
+                <p className="mt-2 text-2xl font-black text-slate-900">
 
-                    <p className="mt-2 text-2xl font-extrabold text-slate-900">
+                    {value}
 
-                        {value}
+                </p>
 
-                    </p>
+                <p className="mt-1 text-xs text-slate-400">
 
-                    <p className="mt-1 text-xs text-slate-400">
+                    {subtitle}
 
-                        {description}
+                </p>
 
-                    </p>
+            </div>
 
-                </div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
 
-                <div className="rounded-2xl bg-slate-100 p-4 text-slate-700">
-
-                    <Icon size={24} />
-
-                </div>
+                <Icon size={23} />
 
             </div>
 
@@ -1012,18 +1320,49 @@ function ActivityCard({
 }
 
 
-function getInitials(student) {
+/* ================================================================
+   EMPTY STATE
+================================================================ */
 
-    if (!student) {
-        return "?";
-    }
+function EmptyState({ text }) {
 
-    const first =
-        student.first_name?.charAt(0) ?? "";
+    return (
 
-    const last =
-        student.last_name?.charAt(0) ?? "";
+        <div className="px-7 py-12 text-center text-sm text-slate-400">
 
-    return `${first}${last}`.toUpperCase();
+            {text}
+
+        </div>
+
+    );
+
+}
+
+
+/* ================================================================
+   EMPTY TABLE ROW
+================================================================ */
+
+function EmptyRow({
+    colSpan,
+    text,
+}) {
+
+    return (
+
+        <tr>
+
+            <td
+                colSpan={colSpan}
+                className="px-7 py-12 text-center text-sm text-slate-400"
+            >
+
+                {text}
+
+            </td>
+
+        </tr>
+
+    );
 
 }

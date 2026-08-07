@@ -11,6 +11,8 @@ export default function EnrollmentTable({
 
     enrollments = [],
 
+    onDelete,
+
 }) {
 
     if (!enrollments.length) {
@@ -41,362 +43,369 @@ export default function EnrollmentTable({
 
         <div className="overflow-hidden rounded-3xl bg-white shadow">
 
-            <table className="w-full">
+            <div className="overflow-x-auto">
 
-                <thead className="border-b bg-slate-50">
+                <table className="w-full">
 
-                    <tr className="text-left">
+                    <thead className="border-b bg-slate-50">
 
-                        <th className="px-6 py-5">
+                        <tr className="text-left">
 
-                            Étudiant
+                            <th className="px-6 py-5">
 
-                        </th>
+                                Étudiant
 
-                        <th>
+                            </th>
 
-                            Formation
+                            <th>
 
-                        </th>
+                                Formation
 
-                        <th>
+                            </th>
 
-                            Frais
+                            <th>
 
-                        </th>
+                                Frais
 
-                        <th>
+                            </th>
 
-                            Réduction
+                            <th>
 
-                        </th>
+                                Réduction
 
-                        <th>
+                            </th>
 
-                            Payé
+                            <th>
 
-                        </th>
+                                Payé
 
-                        <th>
+                            </th>
 
-                            Solde
+                            <th>
 
-                        </th>
+                                Solde
 
-                        <th>
+                            </th>
 
-                            Progression
+                            <th>
 
-                        </th>
+                                Progression
 
-                        <th>
+                            </th>
 
-                            Statut
+                            <th>
 
-                        </th>
+                                Statut
 
-                        <th className="text-center">
+                            </th>
 
-                            Actions
+                            <th className="px-6 text-center">
 
-                        </th>
+                                Actions
 
-                    </tr>
+                            </th>
 
-                </thead>
+                        </tr>
 
-                <tbody>
+                    </thead>
 
-                    {
+                    <tbody>
 
-                        enrollments.map((enrollment) => (
+                        {enrollments.map((enrollment) => {
 
-                            <tr
-                                key={enrollment.id}
-                                className="border-b hover:bg-slate-50"
-                            >
+                            const student =
+                                enrollment.student;
 
-                                <td className="px-6 py-5">
+                            const training =
+                                enrollment.training;
 
-                                    <div className="flex items-center gap-4">
+                            const total =
+                                Number(enrollment.total_amount ?? 0);
 
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
+                            const paid =
+                                Number(enrollment.amount_paid ?? 0);
 
-                                            {
+                            const balance =
+                                Number(enrollment.balance ?? 0);
 
-                                                enrollment.student.first_name[0]
+                            const discount =
+                                Number(enrollment.discount ?? 0);
 
-                                            }
+                            const progress =
+                                total > 0
+                                    ? Math.min(
+                                        100,
+                                        Math.round(
+                                            (paid / total) * 100
+                                        )
+                                    )
+                                    : 0;
 
-                                            {
+                            const studentName =
+                                `${student?.first_name ?? ""} ${student?.last_name ?? ""}`
+                                    .trim() || "Étudiant";
 
-                                                enrollment.student.last_name[0]
+                            return (
 
-                                            }
+                                <tr
+                                    key={enrollment.id}
+                                    className="border-b last:border-b-0 hover:bg-slate-50"
+                                >
+
+                                    {/* Étudiant */}
+
+                                    <td className="px-6 py-5">
+
+                                        <div className="flex items-center gap-3">
+
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-600">
+
+                                                {student?.first_name?.charAt(0) ?? ""}
+                                                {student?.last_name?.charAt(0) ?? ""}
+
+                                            </div>
+
+                                            <div>
+
+                                                <div className="font-semibold">
+
+                                                    {studentName}
+
+                                                </div>
+
+                                                <div className="text-sm text-slate-500">
+
+                                                    {enrollment.enrollment_number}
+
+                                                </div>
+
+                                            </div>
 
                                         </div>
 
-                                        <div>
+                                    </td>
 
-                                            <h3 className="font-semibold">
+                                    {/* Formation */}
 
-                                                {
+                                    <td>
 
-                                                    enrollment.student.first_name
+                                        <div className="font-medium">
 
-                                                }{" "}
-
-                                                {
-
-                                                    enrollment.student.last_name
-
-                                                }
-
-                                            </h3>
-
-                                            <p className="text-sm text-slate-500">
-
-                                                {
-
-                                                    enrollment.enrollment_number
-
-                                                }
-
-                                            </p>
+                                            {training?.title ?? "—"}
 
                                         </div>
 
-                                    </div>
+                                        {training?.duration_months && (
 
-                                </td>
+                                            <div className="text-sm text-slate-500">
 
-                                <td>
+                                                {training.duration_months} mois
 
-                                    <div>
+                                            </div>
 
-                                        <h3 className="font-semibold">
+                                        )}
 
-                                            {
+                                    </td>
 
-                                                enrollment.training.title
+                                    {/* Frais */}
 
-                                            }
+                                    <td>
 
-                                        </h3>
+                                        <span className="rounded-xl bg-indigo-50 px-3 py-2 font-medium text-indigo-600">
 
-                                        <p className="text-sm text-slate-500">
-
-                                            {
-
-                                                enrollment.training.duration_months
-
-                                            } mois
-
-                                        </p>
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-
-                                    <span className="rounded-full bg-indigo-100 px-4 py-2 font-semibold text-indigo-700">
-
-                                        {
-
-                                            Number(
-                                                enrollment.total_amount
-                                            ).toLocaleString()
-
-                                        } FCFA
-
-                                    </span>
-
-                                </td>
-
-                                <td>
-
-                                    <span className="rounded-full bg-orange-100 px-4 py-2 font-semibold text-orange-700">
-
-                                        {
-
-                                            Number(
-                                                enrollment.discount
-                                            ).toLocaleString()
-
-                                        } FCFA
-
-                                    </span>
-
-                                </td>
-
-                                <td className="font-semibold text-green-700">
-
-                                    {
-
-                                        Number(
-                                            enrollment.amount_paid
-                                        ).toLocaleString()
-
-                                    } FCFA
-
-                                </td>
-
-                                <td className="font-semibold text-red-600">
-
-                                    {
-
-                                        Number(
-                                            enrollment.balance
-                                        ).toLocaleString()
-
-                                    } FCFA
-
-                                </td>
-
-                                <td className="w-56">
-
-                                    <div className="space-y-2">
-
-                                        <div className="h-3 overflow-hidden rounded-full bg-slate-200">
-
-                                            <div
-
-                                                className="h-full rounded-full bg-green-500"
-
-                                                style={{
-
-                                                    width: `${enrollment.payment_progress}%`,
-
-                                                }}
-
-                                            />
-
-                                        </div>
-
-                                        <span className="text-sm font-semibold">
-
-                                            {
-
-                                                enrollment.payment_progress
-
-                                            } %
+                                            {total.toLocaleString("fr-FR")} FCFA
 
                                         </span>
 
-                                    </div>
+                                    </td>
 
-                                </td>
+                                    {/* Réduction */}
 
-                                <td>
+                                    <td>
 
-                                    {
+                                        <span className="rounded-xl bg-orange-50 px-3 py-2 font-medium text-orange-600">
 
-                                        enrollment.status === "paid" && (
+                                            {discount.toLocaleString("fr-FR")} FCFA
 
-                                            <span className="rounded-full bg-green-100 px-4 py-2 font-semibold text-green-700">
+                                        </span>
 
-                                                Soldée
+                                    </td>
+
+                                    {/* Payé */}
+
+                                    <td>
+
+                                        <span className="font-semibold text-green-600">
+
+                                            {paid.toLocaleString("fr-FR")} FCFA
+
+                                        </span>
+
+                                    </td>
+
+                                    {/* Solde */}
+
+                                    <td>
+
+                                        <span className="font-semibold text-red-600">
+
+                                            {balance.toLocaleString("fr-FR")} FCFA
+
+                                        </span>
+
+                                    </td>
+
+                                    {/* Progression */}
+
+                                    <td className="min-w-[180px]">
+
+                                        <div className="flex items-center gap-2">
+
+                                            <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-200">
+
+                                                <div
+                                                    className="h-full rounded-full bg-green-500 transition-all"
+                                                    style={{
+                                                        width: `${progress}%`,
+                                                    }}
+                                                />
+
+                                            </div>
+
+                                            <span className="text-sm font-medium">
+
+                                                {progress}%
 
                                             </span>
 
-                                        )
+                                        </div>
 
-                                    }
+                                    </td>
 
-                                    {
+                                    {/* Statut */}
 
-                                        enrollment.status === "partial" && (
+                                    <td>
 
-                                            <span className="rounded-full bg-orange-100 px-4 py-2 font-semibold text-orange-700">
+                                        {enrollment.status === "pending" && (
 
-                                                Partielle
-
-                                            </span>
-
-                                        )
-
-                                    }
-
-                                    {
-
-                                        enrollment.status === "pending" && (
-
-                                            <span className="rounded-full bg-red-100 px-4 py-2 font-semibold text-red-700">
+                                            <span className="rounded-full bg-red-100 px-4 py-2 text-sm font-medium text-red-600">
 
                                                 En attente
 
                                             </span>
 
-                                        )
+                                        )}
 
-                                    }
+                                        {enrollment.status === "partial" && (
 
-                                </td>
+                                            <span className="rounded-full bg-orange-100 px-4 py-2 text-sm font-medium text-orange-600">
 
-                                <td>
+                                                Partielle
 
-                                    <div className="flex justify-center gap-2">
+                                            </span>
 
-                                        <Link
+                                        )}
 
-                                            to={`/enrollments/${enrollment.id}`}
+                                        {enrollment.status === "paid" && (
 
-                                            className="rounded-xl bg-blue-100 p-3 text-blue-700 hover:bg-blue-200"
+                                            <span className="rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-600">
 
-                                        >
+                                                Soldée
 
-                                            <Eye size={18} />
+                                            </span>
 
-                                        </Link>
+                                        )}
 
-                                        <Link
+                                        {enrollment.status === "cancelled" && (
 
-                                            to={`/enrollments/${enrollment.id}/edit`}
+                                            <span className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
 
-                                            className="rounded-xl bg-yellow-100 p-3 text-yellow-700 hover:bg-yellow-200"
+                                                Annulée
 
-                                        >
+                                            </span>
 
-                                            <Pencil size={18} />
+                                        )}
 
-                                        </Link>
+                                    </td>
 
-                                        <Link
+                                    {/* Actions */}
 
-                                            to={`/payments/create?enrollment=${enrollment.id}`}
+                                    <td className="px-6">
 
-                                            className="rounded-xl bg-green-100 p-3 text-green-700 hover:bg-green-200"
+                                        <div className="flex items-center justify-center gap-2">
 
-                                        >
+                                            {/* Voir */}
 
-                                            <Wallet size={18} />
+                                            <Link
+                                                to={`/enrollments/${enrollment.id}`}
+                                                title="Voir"
+                                                className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition hover:bg-blue-200"
+                                            >
 
-                                        </Link>
+                                                <Eye size={18} />
 
-                                        <button
+                                            </Link>
 
-                                            className="rounded-xl bg-red-100 p-3 text-red-700 hover:bg-red-200"
+                                            {/* Modifier */}
 
-                                        >
+                                            <Link
+                                                to={`/enrollments/${enrollment.id}/edit`}
+                                                title="Modifier"
+                                                className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-100 text-yellow-600 transition hover:bg-yellow-200"
+                                            >
 
-                                            <Trash2 size={18} />
+                                                <Pencil size={18} />
 
-                                        </button>
+                                            </Link>
 
-                                    </div>
+                                            {/* Paiement */}
 
-                                </td>
+                                            <Link
+                                                to={`/payments/create?enrollment_id=${enrollment.id}`}
+                                                title="Ajouter un paiement"
+                                                className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-green-600 transition hover:bg-green-200"
+                                            >
 
-                            </tr>
+                                                <Wallet size={18} />
 
-                        ))
+                                            </Link>
 
-                    }
+                                            {/* Supprimer */}
 
-                </tbody>
+                                            <button
+                                                type="button"
+                                                title="Supprimer"
+                                                onClick={() => {
 
-            </table>
+                                                    if (onDelete) {
+
+                                                        onDelete(enrollment);
+
+                                                    }
+
+                                                }}
+                                                className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-100 text-red-600 transition hover:bg-red-200"
+                                            >
+
+                                                <Trash2 size={18} />
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                            );
+
+                        })}
+
+                    </tbody>
+
+                </table>
+
+            </div>
 
         </div>
 
