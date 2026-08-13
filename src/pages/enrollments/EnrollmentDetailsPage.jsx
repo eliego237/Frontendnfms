@@ -21,6 +21,13 @@ export default function EnrollmentDetailsPage() {
 
     const [enrollment, setEnrollment] = useState(null);
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chargement de l'inscription
+    |--------------------------------------------------------------------------
+    */
+
     const loadEnrollment = useCallback(async () => {
 
         try {
@@ -29,19 +36,30 @@ export default function EnrollmentDetailsPage() {
 
             const response = await getEnrollment(id);
 
+            console.log(
+                "📚 INSCRIPTION CHARGÉE :",
+                response.data.data
+            );
+
+            console.log(
+                "📖 MODULES DE LA FORMATION :",
+                response.data.data?.training?.modules
+            );
+
             setEnrollment(response.data.data);
 
-        }
+        } catch (error) {
 
-        catch (error) {
+            console.error(
+                "❌ Erreur chargement inscription :",
+                error
+            );
 
-            console.error(error);
+            toast.error(
+                "Impossible de charger cette inscription."
+            );
 
-            toast.error("Impossible de charger cette inscription.");
-
-        }
-
-        finally {
+        } finally {
 
             setLoading(false);
 
@@ -49,11 +67,25 @@ export default function EnrollmentDetailsPage() {
 
     }, [id]);
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chargement initial
+    |--------------------------------------------------------------------------
+    */
+
     useEffect(() => {
 
         loadEnrollment();
 
     }, [loadEnrollment]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chargement
+    |--------------------------------------------------------------------------
+    */
 
     if (loading) {
 
@@ -61,7 +93,7 @@ export default function EnrollmentDetailsPage() {
 
             <div className="flex justify-center py-24">
 
-                <div className="text-slate-500 text-lg">
+                <div className="text-lg text-slate-500">
 
                     Chargement...
 
@@ -73,13 +105,20 @@ export default function EnrollmentDetailsPage() {
 
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inscription introuvable
+    |--------------------------------------------------------------------------
+    */
+
     if (!enrollment) {
 
         return (
 
             <div className="flex justify-center py-24">
 
-                <div className="text-red-500 text-lg">
+                <div className="text-lg text-red-500">
 
                     Inscription introuvable.
 
@@ -91,13 +130,42 @@ export default function EnrollmentDetailsPage() {
 
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Données sécurisées
+    |--------------------------------------------------------------------------
+    */
+
+    const training = enrollment.training ?? {};
+
+    const modules = training.modules ?? [];
+
+    const payments = enrollment.payments ?? [];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Affichage
+    |--------------------------------------------------------------------------
+    */
+
     return (
 
         <div className="space-y-8">
 
+            {/* =========================================================
+                EN-TÊTE
+            ========================================================= */}
+
             <EnrollmentDetailsHeader
                 enrollment={enrollment}
             />
+
+
+            {/* =========================================================
+                INFORMATIONS PRINCIPALES
+            ========================================================= */}
 
             <section className="grid gap-6 xl:grid-cols-4">
 
@@ -106,7 +174,7 @@ export default function EnrollmentDetailsPage() {
                 />
 
                 <EnrollmentTrainingSummary
-                    training={enrollment.training}
+                    training={training}
                 />
 
                 <EnrollmentFinanceSummary
@@ -119,13 +187,28 @@ export default function EnrollmentDetailsPage() {
 
             </section>
 
+
+            {/* =========================================================
+                MODULES DE LA FORMATION
+            ========================================================= */}
+
             <EnrollmentModulesList
-                training={enrollment.training}
+                training={training}
             />
 
+
+            {/* =========================================================
+                HISTORIQUE DES PAIEMENTS
+            ========================================================= */}
+
             <EnrollmentPaymentsHistory
-                payments={enrollment.payments || []}
+                payments={payments}
             />
+
+
+            {/* =========================================================
+                ACTIONS RAPIDES
+            ========================================================= */}
 
             <EnrollmentQuickActions
                 enrollment={enrollment}

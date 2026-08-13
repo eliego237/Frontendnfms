@@ -6,8 +6,46 @@ export async function getTrainingModules() {
 }
 
 export async function createTrainingModule(data) {
-    const response = await api.post("/training-modules", data);
-    return response.data;
+
+    console.log("📦 MODULE ENVOYÉ AU BACKEND :", data);
+
+    try {
+
+        const response = await api.post(
+            "/training-modules",
+            data
+        );
+
+        console.log(
+            "✅ RÉPONSE CRÉATION MODULE :",
+            response.data
+        );
+
+        return response.data;
+
+    } catch (error) {
+
+        console.error(
+            "❌ ERREUR CRÉATION MODULE"
+        );
+
+        console.error(
+            "STATUS :",
+            error?.response?.status
+        );
+
+        console.error(
+            "DATA :",
+            error?.response?.data
+        );
+
+        console.error(
+            "VALIDATION :",
+            error?.response?.data?.errors
+        );
+
+        throw error;
+    }
 }
 
 export async function updateTrainingModule(id, data) {

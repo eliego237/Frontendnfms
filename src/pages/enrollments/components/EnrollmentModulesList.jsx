@@ -3,21 +3,27 @@ import {
     Clock3,
     Layers3,
     CheckCircle2,
+    Hash,
 } from "lucide-react";
 
 export default function EnrollmentModulesList({ training }) {
 
+    // Les modules appartiennent à la formation
     const modules = training?.modules ?? [];
 
     return (
 
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
 
-            <div className="mb-8 flex items-center justify-between">
+            {/* =========================================================
+                EN-TÊTE
+            ========================================================= */}
+
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
                 <div className="flex items-center gap-4">
 
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-100">
 
                         <Layers3
                             size={28}
@@ -28,153 +34,220 @@ export default function EnrollmentModulesList({ training }) {
 
                     <div>
 
-                        <h2 className="text-2xl font-bold">
-
+                        <h2 className="text-2xl font-bold text-slate-900">
                             Modules de la formation
-
                         </h2>
 
                         <p className="text-slate-500">
-
                             Programme pédagogique suivi par l'étudiant
-
                         </p>
 
                     </div>
 
                 </div>
 
-                <div className="rounded-xl bg-slate-100 px-4 py-2 font-semibold">
+                <div className="w-fit rounded-xl bg-slate-100 px-4 py-2 font-semibold text-slate-700">
 
-                    {modules.length} module(s)
+                    {modules.length} module
+                    {modules.length > 1 ? "s" : ""}
 
                 </div>
 
             </div>
 
-            {
 
-                modules.length === 0 ? (
+            {/* =========================================================
+                AUCUN MODULE
+            ========================================================= */}
 
-                    <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center">
+            {modules.length === 0 ? (
 
-                        <BookOpen
-                            size={42}
-                            className="mx-auto mb-4 text-slate-300"
-                        />
+                <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center">
 
-                        <h3 className="text-lg font-semibold text-slate-700">
+                    <BookOpen
+                        size={42}
+                        className="mx-auto mb-4 text-slate-300"
+                    />
 
-                            Aucun module disponible
+                    <h3 className="text-lg font-semibold text-slate-700">
+                        Aucun module disponible
+                    </h3>
 
-                        </h3>
+                    <p className="mt-2 text-slate-500">
+                        Cette formation ne possède encore aucun module.
+                    </p>
 
-                        <p className="mt-2 text-slate-500">
+                </div>
 
-                            Cette formation ne possède encore aucun module.
+            ) : (
 
-                        </p>
+                /* =====================================================
+                   LISTE DES MODULES
+                ===================================================== */
 
-                    </div>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
 
-                ) : (
+                    {modules.map((module, index) => {
 
-                    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                        const isActive =
+                            module.is_active === true ||
+                            module.is_active === 1;
 
-                        {
+                        return (
 
-                            modules.map((module, index) => (
+                            <div
+                                key={module.id}
+                                className="group rounded-2xl border border-slate-200 bg-white p-6 transition duration-200 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-lg"
+                            >
 
-                                <div
-                                    key={module.id}
-                                    className="rounded-2xl border border-slate-200 p-6 transition hover:border-blue-300 hover:shadow-md"
-                                >
+                                {/* -------------------------------------------------
+                                    HAUT DE LA CARTE
+                                ------------------------------------------------- */}
 
-                                    <div className="mb-5 flex items-center justify-between">
+                                <div className="mb-5 flex items-center justify-between">
 
-                                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
 
-                                            <BookOpen
-                                                size={20}
-                                                className="text-blue-600"
+                                        <BookOpen
+                                            size={20}
+                                            className="text-blue-600"
+                                        />
+
+                                    </div>
+
+                                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+
+                                        Module {module.position ?? index + 1}
+
+                                    </span>
+
+                                </div>
+
+
+                                {/* -------------------------------------------------
+                                    TITRE
+                                ------------------------------------------------- */}
+
+                                <h3 className="text-lg font-bold text-slate-800">
+
+                                    {module.title || "Module sans titre"}
+
+                                </h3>
+
+
+                                {/* -------------------------------------------------
+                                    CODE
+                                ------------------------------------------------- */}
+
+                                <div className="mt-2 flex items-center gap-2 text-sm text-indigo-600">
+
+                                    <Hash size={15} />
+
+                                    <span className="font-semibold">
+                                        {module.code || "—"}
+                                    </span>
+
+                                </div>
+
+
+                                {/* -------------------------------------------------
+                                    DESCRIPTION
+                                ------------------------------------------------- */}
+
+                                <p className="mt-3 line-clamp-3 min-h-[60px] text-sm leading-6 text-slate-500">
+
+                                    {module.description ||
+                                        "Aucune description disponible pour ce module."}
+
+                                </p>
+
+
+                                {/* -------------------------------------------------
+                                    INFORMATIONS
+                                ------------------------------------------------- */}
+
+                                <div className="mt-6 space-y-3 border-t border-slate-100 pt-5">
+
+                                    {/* Durée */}
+
+                                    <div className="flex items-center justify-between">
+
+                                        <span className="text-sm text-slate-500">
+                                            Durée
+                                        </span>
+
+                                        <span className="flex items-center gap-2 font-semibold text-slate-700">
+
+                                            <Clock3
+                                                size={16}
+                                                className="text-indigo-500"
                                             />
 
-                                        </div>
-
-                                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">
-
-                                            Module {index + 1}
+                                            {module.duration_hours ?? 0} h
 
                                         </span>
 
                                     </div>
 
-                                    <h3 className="text-lg font-bold text-slate-800">
 
-                                        {module.title}
+                                    {/* Position */}
 
-                                    </h3>
+                                    <div className="flex items-center justify-between">
 
-                                    <p className="mt-2 line-clamp-3 text-sm text-slate-500">
+                                        <span className="text-sm text-slate-500">
+                                            Position
+                                        </span>
 
-                                        {module.description || "Aucune description."}
+                                        <span className="font-semibold text-slate-700">
+                                            #{module.position ?? index + 1}
+                                        </span>
 
-                                    </p>
+                                    </div>
 
-                                    <div className="mt-6 space-y-3">
 
-                                        <div className="flex items-center justify-between">
+                                    {/* Statut */}
 
-                                            <span className="text-slate-500">
+                                    <div className="flex items-center justify-between">
 
-                                                Durée
+                                        <span className="text-sm text-slate-500">
+                                            Statut
+                                        </span>
 
-                                            </span>
-
-                                            <span className="flex items-center gap-2 font-semibold">
-
-                                                <Clock3 size={16} />
-
-                                                {module.duration_hours} h
-
-                                            </span>
-
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-
-                                            <span className="text-slate-500">
-
-                                                Statut
-
-                                            </span>
+                                        {isActive ? (
 
                                             <span className="flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
 
                                                 <CheckCircle2 size={15} />
 
-                                                Inclus
+                                                Actif
 
                                             </span>
 
-                                        </div>
+                                        ) : (
+
+                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-500">
+
+                                                Inactif
+
+                                            </span>
+
+                                        )}
 
                                     </div>
 
                                 </div>
 
-                            ))
+                            </div>
 
-                        }
+                        );
 
-                    </div>
+                    })}
 
-                )
+                </div>
 
-            }
+            )}
 
         </div>
 
     );
-
 }

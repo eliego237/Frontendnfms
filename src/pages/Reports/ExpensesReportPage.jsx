@@ -87,12 +87,13 @@ export default function ExpensesReportPage() {
 
     function getReference(expense) {
 
-        return (
-            expense?.reference ??
-            `DEP-${expense?.id ?? "—"}`
-        );
+    return (
+        expense?.expense_number ??
+        expense?.reference ??
+        `DEP-${expense?.id ?? "—"}`
+    );
 
-    }
+}
 
     function getCategory(expense) {
 
@@ -133,103 +134,203 @@ export default function ExpensesReportPage() {
     |--------------------------------------------------------------------------
     */
 
-    const loadExpenses = useCallback(async () => {
+const loadExpenses = useCallback(async () => {
+    try {
+        setLoading(true);
 
-        try {
+        const params = {};
 
-            setLoading(true);
+        if (dateFrom) {
+            params.date_from = dateFrom;
+        }
 
-            const params = {};
+        if (dateTo) {
+            params.date_to = dateTo;
+        }
 
-            if (dateFrom) {
-                params.date_from = dateFrom;
+        if (category && category !== "all") {
+            params.category = category;
+        }
+
+        if (
+            paymentMethodFilter &&
+            paymentMethodFilter !== "all"
+        ) {
+            params.payment_method_id = paymentMethodFilter;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Rapport : statistiques
+        |--------------------------------------------------------------------------
+        */
+
+        const reportResponse = await api.get(
+            "/reports/expenses",
+            {
+                params,
             }
+        );
 
-            if (dateTo) {
-                params.date_to = dateTo;
-            }
+        console.log(
+            "🔥 RAPPORT DEPENSES :",
+            reportResponse.data
+        );
 
-            if (
-                category &&
-                category !== "all"
-            ) {
-                params.category = category;
-            }
+        const report =
+            reportResponse?.data?.data ?? {};
 
-            if (
-                paymentMethodFilter &&
-                paymentMethodFilter !== "all"
-            ) {
-                params.payment_method_id =
-                    paymentMethodFilter;
-            }
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Dépenses : liste réelle
+        |--------------------------------------------------------------------------
+        */
 
-            const response = await api.get(
-                "/reports/expenses",
-                {
-                    params,
-                }
-            );
+        const expensesResponse = await api.get(
+            "/expenses"
+        );
 
-            console.log(response.data);
+        console.log(
+            "🔥 LISTE DEPENSES :",
+            expensesResponse.data
+        );
 
-            const report =
-                response.data.data;
+        const expensesResult =
+            expensesResponse?.data?.data ?? [];
 
-            const expensesData =
-                report?.expenses?.data ?? [];
+        /*
+        |--------------------------------------------------------------------------
+        | Récupération robuste
+        |--------------------------------------------------------------------------
+        */
 
-            setExpenses(expensesData);
+        let expensesData = [];
 
-            setStats({
+        if (Array.isArray(expensesResult)) {
 
-                totalExpenses:
-                    Number(
-                        report?.total_expenses ?? 0
-                    ),
+            expensesData = expensesResult;
 
-                totalAmount:
-                    Number(
-                        report?.total_amount ?? 0
-                    ),
+        } else if (
+            Array.isArray(expensesResult?.data)
+        ) {
 
-                averageExpense:
-                    Number(
-                        report?.average_expense ?? 0
-                    ),
-
-                largestExpense:
-                    Number(
-                        report?.largest_expense ?? 0
-                    ),
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Erreur rapport dépenses :",
-                error
-            );
-
-            console.error(
-                error?.response?.data
-            );
-
-            setExpenses([]);
-
-        } finally {
-
-            setLoading(false);
+            expensesData = expensesResult.data;
 
         }
 
-    }, [
-        category,
-        paymentMethodFilter,
-        dateFrom,
-        dateTo,
-    ]);
+        /*
+        |--------------------------------------------------------------------------
+        | Application des filtres côté frontend
+        |--------------------------------------------------------------------------
+        */
+
+        expensesData = expensesData.filter((expense) => {
+
+            // Catégorie
+            if (
+                category &&
+                category !== "all" &&
+                String(expense?.category ?? "")
+                    .toLowerCase() !==
+                String(category).toLowerCase()
+            ) {
+                return false;
+            }
+
+            // Mode de paiement
+            if (
+                paymentMethodFilter &&
+                paymentMethodFilter !== "all" &&
+                String(expense?.payment_method_id ?? "") !==
+                String(paymentMethodFilter)
+            ) {
+                return false;
+            }
+
+            // Date début
+            if (dateFrom && expense?.expense_date) {
+
+                const expenseDate =
+                    expense.expense_date.substring(0, 10);
+
+                if (expenseDate < dateFrom) {
+                    return false;
+                }
+            }
+
+            // Date fin
+            if (dateTo && expense?.expense_date) {
+
+                const expenseDate =
+                    expense.expense_date.substring(0, 10);
+
+                if (expenseDate > dateTo) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        console.log(
+            "🔥🔥 DÉPENSES FINALES :",
+            expensesData
+        );
+
+        setExpenses(expensesData);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Statistiques
+        |--------------------------------------------------------------------------
+        */
+
+        setStats({
+
+            totalExpenses: Number(
+                report?.total_expenses ?? 0
+            ),
+
+            totalAmount: Number(
+                report?.total_amount ?? 0
+            ),
+
+            averageExpense: Number(
+                report?.average_expense ?? 0
+            ),
+
+            largestExpense: Number(
+                report?.largest_expense ?? 0
+            ),
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "❌ ERREUR DEPENSES :",
+            error
+        );
+
+        console.error(
+            "❌ RESPONSE :",
+            error?.response?.data
+        );
+
+        setExpenses([]);
+
+    } finally {
+
+        setLoading(false);
+
+    }
+
+}, [
+    category,
+    paymentMethodFilter,
+    dateFrom,
+    dateTo,
+]);
 
     /*
     |--------------------------------------------------------------------------
@@ -255,38 +356,51 @@ export default function ExpensesReportPage() {
     |--------------------------------------------------------------------------
     */
 
-    const filteredExpenses = useMemo(() => {
+const filteredExpenses = useMemo(() => {
 
-        if (!search.trim()) {
-            return expenses;
-        }
+    if (!search.trim()) {
+        return expenses;
+    }
 
-        const term = search.toLowerCase().trim();
+    const term = search.toLowerCase().trim();
 
-        return expenses.filter((expense) => {
+    return expenses.filter((expense) => {
 
-            const searchable = [
+        const searchable = [
 
-                getReference(expense),
+            getReference(expense),
 
-                getCategory(expense),
+            getCategory(expense),
 
-                getPaymentMethod(expense),
+            getPaymentMethod(expense),
 
-                expense?.description,
+            expense?.title,
 
-                expense?.amount,
+            expense?.description,
 
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
+            expense?.amount,
 
-            return searchable.includes(term);
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
 
-        });
+        return searchable.includes(term);
 
-    }, [expenses, search]);
+    });
+
+}, [expenses, search]);
+
+    const filteredTotal = useMemo(() => {
+
+    return filteredExpenses.reduce(
+        (total, expense) => {
+            return total + Number(expense?.amount ?? 0);
+        },
+        0
+    );
+
+}, [filteredExpenses]);
 
     /*
     |--------------------------------------------------------------------------

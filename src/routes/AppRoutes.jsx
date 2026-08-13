@@ -47,6 +47,11 @@ import ExpensesReportPage from "../pages/Reports/ExpensesReportPage";
 import FinancialReportPage from "../pages//Reports/FinancialReportPage";
 import CashBookReportPage from "../pages/Reports/CashBookReportPage";
 
+//Settings
+import ConnectionSettingsPage from "../pages/settings/ConnectionSettingsPage";
+import ConnectionPage from "../pages/settings/ConnectionPage";
+import GeneralSettingsPage from "../pages/settings/GeneralSettingsPage";
+
 export default function AppRoutes() {
 
     return (
@@ -125,6 +130,20 @@ export default function AppRoutes() {
   element={<CashBookReportPage />}
 />
 
+<Route
+    path="/settings/connection"
+    element={<ConnectionSettingsPage />}
+/>
+
+<Route
+    path="/settings/connection"
+    element={<ConnectionPage />}
+/>
+
+<Route
+    path="/settings/general"
+    element={<GeneralSettingsPage />}
+/>
                     <Route
                         path="students/:id"
                         element={<StudentDetailsPage />}
