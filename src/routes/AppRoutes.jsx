@@ -42,7 +42,7 @@ import StudentsReportPage from "../pages/Reports/StudentsReportPage";
 // Rapports
 import ReportsPage from "../pages/Reports/ReportsPage";
 import EnrollmentsReportPage from "../pages/Reports/EnrollmentsReportPage";
-import PaymentsReportPage from "../pages/reports/PaymentsReportPage";
+import PaymentsReportPage from "../pages/Reports/PaymentsReportPage";
 import ExpensesReportPage from "../pages/Reports/ExpensesReportPage";
 import FinancialReportPage from "../pages//Reports/FinancialReportPage";
 import CashBookReportPage from "../pages/Reports/CashBookReportPage";
