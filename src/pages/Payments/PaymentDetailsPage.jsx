@@ -98,6 +98,113 @@ export default function PaymentDetailsPage() {
 
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ouvrir le reçu
+    |--------------------------------------------------------------------------
+    */
+
+    async function handlePrint() {
+
+        try {
+
+            const response = await api.get(
+                `/payments/${payment.id}/receipt`,
+                {
+                    responseType: "blob",
+                }
+            );
+
+            const blob = new Blob(
+                [response.data],
+                {
+                    type:
+                        response.headers["content-type"] ||
+                        "application/pdf",
+                }
+            );
+
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            window.open(blobUrl, "_blank");
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Erreur lors de l'ouverture du reçu :",
+                error
+            );
+
+            toast.error(
+                "Impossible d'ouvrir le reçu."
+            );
+
+        }
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Télécharger le reçu
+    |--------------------------------------------------------------------------
+    */
+
+    async function handleDownload() {
+
+        try {
+
+            const response = await api.get(
+                `/payments/${payment.id}/receipt?download=1`,
+                {
+                    responseType: "blob",
+                }
+            );
+
+            const blob = new Blob(
+                [response.data],
+                {
+                    type:
+                        response.headers["content-type"] ||
+                        "application/pdf",
+                }
+            );
+
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+
+            link.href = blobUrl;
+
+            link.download =
+                `recu-paiement-${payment.id}.pdf`;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            window.URL.revokeObjectURL(blobUrl);
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Erreur lors du téléchargement du reçu :",
+                error
+            );
+
+            toast.error(
+                "Impossible de télécharger le reçu."
+            );
+
+        }
+
+    }
+
     if (loading) {
 
         return (
@@ -182,29 +289,9 @@ export default function PaymentDetailsPage() {
 
                     payment={payment}
 
-                    onPrint={() => {
+                    onPrint={handlePrint}
 
-                        window.open(
-
-                            `http://localhost:8000/api/payments/${payment.id}/receipt`,
-
-                            "_blank"
-
-                        );
-
-                    }}
-
-                    onDownload={() => {
-
-                        window.open(
-
-                            `http://localhost:8000/api/payments/${payment.id}/receipt?download=1`,
-
-                            "_blank"
-
-                        );
-
-                    }}
+                    onDownload={handleDownload}
 
                     onDelete={handleDelete}
 

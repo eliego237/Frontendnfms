@@ -20,9 +20,9 @@ export default function ReceiptActions({ payment }) {
     }
 
     const printWindow = window.open(
-        `http://127.0.0.1:8000/api/payments/${payment.id}/receipt`,
-        "_blank"
-    );
+    `https://nfms-production.up.railway.app/api/payments/${payment.id}/receipt`,
+    "_blank"
+);
 
     if (!printWindow) {
         return toast.error("Impossible d'ouvrir la fenêtre d'impression.");
@@ -41,10 +41,10 @@ export default function ReceiptActions({ payment }) {
         return toast.error("Reçu introuvable.");
     }
 
-    window.open(
-        `http://127.0.0.1:8000/api/payments/${payment.id}/receipt`,
-        "_blank"
-    );
+   window.open(
+    `https://nfms-production.up.railway.app/api/payments/${payment.id}/receipt`,
+    "_blank"
+);
 }
 
     function sendReceipt() {
