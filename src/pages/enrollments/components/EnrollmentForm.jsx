@@ -1,8 +1,9 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-import { getStudents } from "../../../services/studentService";
+import { getAllStudents } from "../../../services/studentService";
 import { getTrainings } from "../../../services/trainingService";
 import { createEnrollment } from "../../../services/enrollmentService";
 
@@ -23,7 +24,7 @@ export default function EnrollmentForm() {
     const [loadingData, setLoadingData] = useState(true);
 
     const [studentId, setStudentId] = useState("");
-    const [trainingId, setTrainingId] = useState("");
+    const [trainingIds, setTrainingIds] = useState([]);
 
     const [discount, setDiscount] = useState(0);
 
@@ -38,150 +39,117 @@ export default function EnrollmentForm() {
 
     /*
     |--------------------------------------------------------------------------
-    | Chargement des étudiants et formations
+    | Chargement de tous les étudiants et des formations
     |--------------------------------------------------------------------------
     */
 
     useEffect(() => {
+        let cancelled = false;
+
+        async function loadData() {
+            try {
+                setLoadingData(true);
+
+                const [studentsResponse, trainingsResponse] =
+                    await Promise.all([
+                        getAllStudents(),
+                        getTrainings(),
+                    ]);
+
+                if (cancelled) return;
+
+                // getAllStudents() doit renvoyer un tableau complet.
+                const studentsData = Array.isArray(studentsResponse)
+                    ? studentsResponse
+                    : [];
+
+                // Normalisation de la réponse des formations.
+                let trainingsData = trainingsResponse;
+
+                if (trainingsData?.data !== undefined) {
+                    trainingsData = trainingsData.data;
+                }
+
+                if (trainingsData?.data !== undefined) {
+                    trainingsData = trainingsData.data;
+                }
+
+                if (!Array.isArray(trainingsData)) {
+                    trainingsData = [];
+                }
+
+                setStudents(studentsData);
+                setTrainings(trainingsData);
+
+                console.log(
+                    "Nombre total d'étudiants chargés :",
+                    studentsData.length
+                );
+
+                console.log("Étudiants :", studentsData);
+                console.log("Formations :", trainingsData);
+            } catch (error) {
+                if (cancelled) return;
+
+                console.error(
+                    "Erreur de chargement des données d'inscription :",
+                    error
+                );
+
+                console.error(
+                    "Réponse du serveur :",
+                    error?.response?.data
+                );
+
+                toast.error(
+                    "Impossible de charger les étudiants et les formations."
+                );
+
+                setStudents([]);
+                setTrainings([]);
+            } finally {
+                if (!cancelled) {
+                    setLoadingData(false);
+                }
+            }
+        }
+
         loadData();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
-    async function loadData() {
-        try {
-            setLoadingData(true);
-
-            const [studentsResponse, trainingsResponse] =
-                await Promise.all([
-                    getStudents(),
-                    getTrainings(),
-                ]);
-
-            console.log("Étudiants reçus :", studentsResponse);
-            console.log("Formations reçues :", trainingsResponse);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Normalisation des étudiants
-            |--------------------------------------------------------------------------
-            |
-            | Accepte plusieurs structures :
-            |
-            | response.data.data
-            | response.data
-            | data.data
-            | data
-            |
-            */
-
-            const studentsData =
-                studentsResponse?.data?.data ??
-                studentsResponse?.data ??
-                studentsResponse ??
-                [];
-
-            /*
-            |--------------------------------------------------------------------------
-            | Normalisation des formations
-            |--------------------------------------------------------------------------
-            */
-
-            const trainingsData =
-                trainingsResponse?.data?.data ??
-                trainingsResponse?.data ??
-                trainingsResponse ??
-                [];
-
-            /*
-            |--------------------------------------------------------------------------
-            | Pagination Laravel
-            |--------------------------------------------------------------------------
-            |
-            | Si Laravel renvoie :
-            |
-            | {
-            |   data: [...],
-            |   current_page: 1,
-            |   ...
-            | }
-            |
-            | on récupère uniquement le tableau data.
-            |
-            */
-
-            const normalizedStudents = Array.isArray(studentsData)
-                ? studentsData
-                : Array.isArray(studentsData?.data)
-                    ? studentsData.data
-                    : [];
-
-            const normalizedTrainings = Array.isArray(trainingsData)
-                ? trainingsData
-                : Array.isArray(trainingsData?.data)
-                    ? trainingsData.data
-                    : [];
-
-            console.log(
-                "Étudiants normalisés :",
-                normalizedStudents
-            );
-
-            console.log(
-                "Formations normalisées :",
-                normalizedTrainings
-            );
-
-            setStudents(normalizedStudents);
-            setTrainings(normalizedTrainings);
-
-        } catch (error) {
-            console.error(
-                "Erreur chargement inscription :",
-                error
-            );
-
-            console.error(
-                "Réponse serveur :",
-                error?.response?.data
-            );
-
-            toast.error(
-                "Impossible de charger les étudiants et les formations."
-            );
-
-            setStudents([]);
-            setTrainings([]);
-
-        } finally {
-            setLoadingData(false);
-        }
-    }
-
     /*
     |--------------------------------------------------------------------------
-    | Formation sélectionnée
+    | Formations sélectionnées
     |--------------------------------------------------------------------------
     */
 
-    const selectedTraining = useMemo(() => {
-        return trainings.find(
-            (training) =>
-                Number(training.id) === Number(trainingId)
+    const selectedTrainings = useMemo(() => {
+        return trainings.filter((training) =>
+            trainingIds.includes(Number(training.id))
         );
-    }, [trainings, trainingId]);
+    }, [trainings, trainingIds]);
 
     /*
     |--------------------------------------------------------------------------
-    | Prix de la formation
+    | Frais des formations
     |--------------------------------------------------------------------------
     */
 
-    const trainingFee = Number(
-        selectedTraining?.price ?? 0
-    );
+    const trainingFee = useMemo(() => {
+        return selectedTrainings.reduce(
+            (total, training) =>
+                total + Number(training.price ?? 0),
+            0
+        );
+    }, [selectedTrainings]);
 
     /*
     |--------------------------------------------------------------------------
-    | Total à payer
+    | Calcul du montant total
     |--------------------------------------------------------------------------
     */
 
@@ -194,45 +162,72 @@ export default function EnrollmentForm() {
 
     /*
     |--------------------------------------------------------------------------
-    | Soumission
+    | Sélection multiple des formations
     |--------------------------------------------------------------------------
     */
 
-    async function handleSubmit(e) {
-        e.preventDefault();
+    function handleTrainingChange(value) {
+        const id = Number(value);
+
+        if (!Number.isFinite(id) || id <= 0) {
+            return;
+        }
+
+        setTrainingIds((currentIds) => {
+            if (currentIds.includes(id)) {
+                return currentIds.filter(
+                    (trainingId) => trainingId !== id
+                );
+            }
+
+            return [...currentIds, id];
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Création de l'inscription
+    |--------------------------------------------------------------------------
+    */
+
+    async function handleSubmit(event) {
+        event.preventDefault();
 
         if (!studentId) {
             toast.error("Sélectionnez un étudiant.");
             return;
         }
 
-        if (!trainingId) {
-            toast.error("Sélectionnez une formation.");
+        if (trainingIds.length === 0) {
+            toast.error("Sélectionnez au moins une formation.");
             return;
         }
 
-        if (!selectedTraining) {
+        if (selectedTrainings.length !== trainingIds.length) {
             toast.error(
-                "La formation sélectionnée est introuvable."
+                "Une ou plusieurs formations sélectionnées sont introuvables."
             );
             return;
         }
 
-        if (trainingFee < 0) {
-            toast.error(
-                "Le prix de la formation est invalide."
-            );
+        if (!enrolledAt) {
+            toast.error("Sélectionnez la date d'inscription.");
             return;
         }
 
-        if (Number(discount) < 0) {
-            toast.error(
-                "La réduction ne peut pas être négative."
-            );
+        if (!academicYear.trim()) {
+            toast.error("Renseignez l'année académique.");
             return;
         }
 
-        if (Number(discount) > REGISTRATION_FEE + trainingFee) {
+        const discountAmount = Number(discount || 0);
+
+        if (!Number.isFinite(discountAmount) || discountAmount < 0) {
+            toast.error("La réduction doit être un montant valide.");
+            return;
+        }
+
+        if (discountAmount > REGISTRATION_FEE + trainingFee) {
             toast.error(
                 "La réduction ne peut pas dépasser le montant total."
             );
@@ -244,44 +239,29 @@ export default function EnrollmentForm() {
 
             const payload = {
                 student_id: Number(studentId),
-
-                training_id: Number(trainingId),
-
-                discount: Number(discount || 0),
-
-                academic_year: academicYear,
-
+                training_ids: trainingIds,
+                discount: discountAmount,
+                academic_year: academicYear.trim(),
                 enrolled_at: enrolledAt,
-
-                notes: notes?.trim() || null,
+                notes: notes.trim() || null,
             };
 
-            console.log(
-                "Création inscription :",
-                payload
-            );
-
-            console.log(
-                "Total calculé :",
-                totalAmount
-            );
+            console.log("Données de l'inscription :", payload);
+            console.log("Montant calculé :", totalAmount);
 
             await createEnrollment(payload);
 
-            toast.success(
-                "Inscription créée avec succès."
-            );
+            toast.success("Inscription créée avec succès.");
 
             navigate("/enrollments");
-
         } catch (error) {
             console.error(
-                "Erreur création inscription :",
+                "Erreur lors de la création de l'inscription :",
                 error
             );
 
             console.error(
-                "Réponse serveur :",
+                "Réponse du serveur :",
                 error?.response?.data
             );
 
@@ -291,7 +271,6 @@ export default function EnrollmentForm() {
                 "Impossible de créer l'inscription.";
 
             toast.error(message);
-
         } finally {
             setLoading(false);
         }
@@ -319,7 +298,15 @@ export default function EnrollmentForm() {
 
     /*
     |--------------------------------------------------------------------------
-    | Formulaire
+    | Formation principale pour les modules
+    |--------------------------------------------------------------------------
+    */
+
+    const selectedTraining = selectedTrainings[0] ?? null;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Affichage du formulaire
     |--------------------------------------------------------------------------
     */
 
@@ -328,29 +315,22 @@ export default function EnrollmentForm() {
             onSubmit={handleSubmit}
             className="space-y-8"
         >
-            {/* Étudiant */}
-
             <EnrollmentStudentCard
                 students={students}
                 value={studentId}
                 onChange={setStudentId}
             />
 
-            {/* Formation */}
-
             <EnrollmentTrainingCard
                 trainings={trainings}
-                value={trainingId}
-                onChange={setTrainingId}
+                value={trainingIds}
+                onChange={handleTrainingChange}
+                selectedTrainings={selectedTrainings}
             />
-
-            {/* Modules */}
 
             <EnrollmentModulesCard
                 training={selectedTraining}
             />
-
-            {/* Finance */}
 
             <EnrollmentFinanceCard
                 registrationFee={REGISTRATION_FEE}
@@ -358,8 +338,6 @@ export default function EnrollmentForm() {
                 discount={discount}
                 setDiscount={setDiscount}
             />
-
-            {/* Informations */}
 
             <EnrollmentInformationCard
                 enrolledAt={enrolledAt}
@@ -369,8 +347,6 @@ export default function EnrollmentForm() {
                 notes={notes}
                 setNotes={setNotes}
             />
-
-            {/* Actions */}
 
             <EnrollmentActions
                 loading={loading}

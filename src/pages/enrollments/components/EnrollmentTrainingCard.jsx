@@ -4,24 +4,36 @@ import {
     Clock3,
     Award,
     Banknote,
+    Check,
 } from "lucide-react";
 
 export default function EnrollmentTrainingCard({
     trainings = [],
-    value,
+    value = [],
     onChange,
+    selectedTrainings = [],
 }) {
-
-    const training = trainings.find(
-        (item) => Number(item.id) === Number(value)
-    );
+    const selectedIds = Array.isArray(value)
+        ? value.map(Number)
+        : [];
 
     const money = (amount) =>
         Number(amount || 0).toLocaleString("fr-FR") + " FCFA";
 
-    return (
+    const toggleTraining = (trainingId) => {
+        onChange(trainingId);
+    };
 
+    const totalSelected = selectedTrainings.reduce(
+        (total, training) =>
+            total + Number(training.price || 0),
+        0
+    );
+
+    return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+
+            {/* En-tête */}
 
             <div className="mb-6 flex items-center gap-3">
 
@@ -37,182 +49,279 @@ export default function EnrollmentTrainingCard({
                 <div>
 
                     <h2 className="text-xl font-bold">
-                        Formation
+                        Formations
                     </h2>
 
                     <p className="text-sm text-slate-500">
-                        Choisissez la formation
+                        Sélectionnez une ou plusieurs formations
                     </p>
 
                 </div>
 
             </div>
 
-            <label className="mb-2 block text-sm font-semibold">
 
-                Formation
+            {/* Liste des formations */}
 
-            </label>
+            <div className="space-y-3">
 
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-emerald-500 focus:outline-none"
-            >
+                {trainings.map((training) => {
 
-                <option value="">
-                    Sélectionner une formation
-                </option>
+                    const isSelected =
+                        selectedIds.includes(
+                            Number(training.id)
+                        );
 
-                {trainings.map((training) => (
+                    return (
+                        <button
+                            key={training.id}
+                            type="button"
+                            onClick={() =>
+                                toggleTraining(training.id)
+                            }
+                            className={`w-full rounded-2xl border-2 p-4 text-left transition-all ${
+                                isSelected
+                                    ? "border-emerald-500 bg-emerald-50"
+                                    : "border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50"
+                            }`}
+                        >
 
-                    <option
-                        key={training.id}
-                        value={training.id}
-                    >
+                            <div className="flex items-start gap-4">
 
-                        {training.code} — {training.title}
+                                {/* Checkbox visuelle */}
 
-                    </option>
+                                <div
+                                    className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 ${
+                                        isSelected
+                                            ? "border-emerald-600 bg-emerald-600 text-white"
+                                            : "border-slate-300 bg-white"
+                                    }`}
+                                >
 
-                ))}
+                                    {isSelected && (
+                                        <Check
+                                            size={16}
+                                            strokeWidth={3}
+                                        />
+                                    )}
 
-            </select>
+                                </div>
 
-            {training && (
 
-                <div className="mt-6 rounded-2xl bg-slate-50 p-5">
+                                {/* Informations */}
 
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                <div className="min-w-0 flex-1">
 
-                        <div>
+                                    <div className="flex flex-col justify-between gap-2 md:flex-row">
 
-                            <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                                        <div>
 
-                                Code
+                                            <p className="font-bold text-slate-900">
 
-                            </p>
+                                                {training.title}
 
-                            <div className="flex items-center gap-2">
+                                            </p>
 
-                                <BookOpen
-                                    size={18}
-                                    className="text-emerald-600"
-                                />
+                                            <p className="text-sm text-slate-500">
 
-                                <span className="font-semibold">
+                                                {training.code}
 
-                                    {training.code}
+                                                {training.category &&
+                                                    ` • ${training.category}`
+                                                }
 
-                                </span>
+                                            </p>
+
+                                        </div>
+
+                                        <div className="text-left md:text-right">
+
+                                            <p className="font-bold text-emerald-700">
+
+                                                {money(training.price)}
+
+                                            </p>
+
+                                            <p className="text-xs text-slate-500">
+
+                                                {training.duration_months ?? 0} mois
+
+                                            </p>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    {/* Détails */}
+
+                                    <div className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+
+                                        <div className="flex items-center gap-2 text-slate-600">
+
+                                            <BookOpen
+                                                size={16}
+                                                className="text-emerald-600"
+                                            />
+
+                                            <span>
+                                                {training.code}
+                                            </span>
+
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-slate-600">
+
+                                            <Clock3
+                                                size={16}
+                                                className="text-emerald-600"
+                                            />
+
+                                            <span>
+                                                {training.duration_months ?? 0} mois
+                                            </span>
+
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-slate-600">
+
+                                            <Award
+                                                size={16}
+                                                className="text-emerald-600"
+                                            />
+
+                                            <span className="truncate">
+
+                                                {training.certificate ||
+                                                    "Certificat de formation"
+                                                }
+
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
 
                             </div>
 
-                        </div>
+                        </button>
+                    );
+                })}
+
+            </div>
+
+
+            {/* Résumé de la sélection */}
+
+            {selectedTrainings.length > 0 && (
+
+                <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+
+                    <div className="mb-4 flex items-center justify-between">
 
                         <div>
 
-                            <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
+                            <p className="text-sm font-semibold text-emerald-800">
 
-                                Catégorie
-
-                            </p>
-
-                            <div className="flex items-center gap-2">
-
-                                <GraduationCap
-                                    size={18}
-                                    className="text-emerald-600"
-                                />
-
-                                <span>
-
-                                    {training.category}
-
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                        <div>
-
-                            <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
-
-                                Durée
+                                Formations sélectionnées
 
                             </p>
 
-                            <div className="flex items-center gap-2">
+                            <p className="text-xs text-emerald-700">
 
-                                <Clock3
-                                    size={18}
-                                    className="text-emerald-600"
-                                />
-
-                                <span>
-
-                                    {training.duration_months} mois
-
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                        <div>
-
-                            <p className="mb-1 text-xs font-semibold uppercase text-slate-500">
-
-                                Certificat
+                                {selectedTrainings.length} formation
+                                {selectedTrainings.length > 1
+                                    ? "s"
+                                    : ""
+                                }
 
                             </p>
 
-                            <div className="flex items-center gap-2">
-
-                                <Award
-                                    size={18}
-                                    className="text-emerald-600"
-                                />
-
-                                <span>
-
-                                    {training.certificate}
-
-                                </span>
-
-                            </div>
-
                         </div>
+
+                        <GraduationCap
+                            size={22}
+                            className="text-emerald-700"
+                        />
 
                     </div>
 
-                    <div className="mt-6 rounded-xl bg-emerald-50 p-4">
 
-                        <div className="flex items-center justify-between">
+                    <div className="space-y-2">
 
-                            <div className="flex items-center gap-2">
+                        {selectedTrainings.map((training) => (
 
-                                <Banknote
-                                    size={20}
-                                    className="text-emerald-700"
-                                />
+                            <div
+                                key={training.id}
+                                className="flex items-center justify-between rounded-xl bg-white px-4 py-3"
+                            >
 
-                                <span className="font-semibold">
+                                <div className="flex items-center gap-3">
 
-                                    Prix de la formation
+                                    <Check
+                                        size={17}
+                                        className="text-emerald-600"
+                                    />
+
+                                    <div>
+
+                                        <p className="font-semibold text-slate-800">
+
+                                            {training.title}
+
+                                        </p>
+
+                                        <p className="text-xs text-slate-500">
+
+                                            {training.code}
+                                            {" • "}
+                                            {training.duration_months ?? 0} mois
+
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                                <span className="font-semibold text-slate-700">
+
+                                    {money(training.price)}
 
                                 </span>
 
                             </div>
 
-                            <span className="text-xl font-bold text-emerald-700">
+                        ))}
 
-                                {money(training.price)}
+                    </div>
+
+
+                    {/* Total formations */}
+
+                    <div className="mt-4 flex items-center justify-between border-t border-emerald-200 pt-4">
+
+                        <div className="flex items-center gap-2">
+
+                            <Banknote
+                                size={20}
+                                className="text-emerald-700"
+                            />
+
+                            <span className="font-bold text-emerald-900">
+
+                                Total formations
 
                             </span>
 
                         </div>
+
+                        <span className="text-xl font-bold text-emerald-700">
+
+                            {money(totalSelected)}
+
+                        </span>
 
                     </div>
 
@@ -221,7 +330,5 @@ export default function EnrollmentTrainingCard({
             )}
 
         </div>
-
     );
-
 }

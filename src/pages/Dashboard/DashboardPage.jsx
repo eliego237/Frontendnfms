@@ -22,15 +22,12 @@ import { getDashboard } from "../../services/dashboardService";
 import PaymentsChart from "../../components/charts/PaymentsChart";
 
 export default function DashboardPage() {
-
     const [dashboard, setDashboard] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     async function loadDashboard(showToast = false) {
-
         try {
-
             if (showToast) {
                 setRefreshing(true);
             } else {
@@ -46,9 +43,7 @@ export default function DashboardPage() {
             if (showToast) {
                 toast.success("Tableau de bord actualisé.");
             }
-
         } catch (error) {
-
             console.error("Erreur Dashboard :", error);
 
             if (error.response) {
@@ -59,62 +54,43 @@ export default function DashboardPage() {
             toast.error(
                 "Impossible de charger le tableau de bord."
             );
-
         } finally {
-
             setLoading(false);
             setRefreshing(false);
-
         }
-
     }
 
     useEffect(() => {
-
         loadDashboard();
-
     }, []);
 
     const paymentsChart = useMemo(() => {
-
         return dashboard?.payments_chart ?? [];
-
     }, [dashboard]);
 
     const latestEnrollments = useMemo(() => {
-
         return dashboard?.latest?.enrollments ?? [];
-
     }, [dashboard]);
 
     const latestPayments = useMemo(() => {
-
         return dashboard?.latest?.payments ?? [];
-
     }, [dashboard]);
 
     const latestExpenses = useMemo(() => {
-
         return dashboard?.latest?.expenses ?? [];
-
     }, [dashboard]);
 
     const latestTransactions = useMemo(() => {
-
         return dashboard?.latest?.transactions ?? [];
-
     }, [dashboard]);
 
     function formatMoney(value) {
-
         return `${Number(value ?? 0).toLocaleString(
             "fr-FR"
         )} FCFA`;
-
     }
 
     function formatDate(date) {
-
         if (!date) {
             return "—";
         }
@@ -127,11 +103,9 @@ export default function DashboardPage() {
                 year: "numeric",
             }
         );
-
     }
 
     function getInitials(student) {
-
         if (!student) {
             return "?";
         }
@@ -143,11 +117,9 @@ export default function DashboardPage() {
             student.last_name?.charAt(0) ?? "";
 
         return `${first}${last}`.toUpperCase();
-
     }
 
     function getStudentName(student) {
-
         if (!student) {
             return "Étudiant inconnu";
         }
@@ -155,13 +127,27 @@ export default function DashboardPage() {
         return `${student.first_name ?? ""} ${
             student.last_name ?? ""
         }`.trim();
+    }
 
+    function getTrainingNames(enrollment) {
+        const trainings = Array.isArray(
+            enrollment?.trainings
+        )
+            ? enrollment.trainings
+            : [];
+
+        if (trainings.length === 0) {
+            return "—";
+        }
+
+        return trainings
+            .map((training) => training?.title)
+            .filter(Boolean)
+            .join(" + ");
     }
 
     function getStatusLabel(status) {
-
         switch (status) {
-
             case "paid":
                 return "Soldée";
 
@@ -176,15 +162,11 @@ export default function DashboardPage() {
 
             default:
                 return status ?? "—";
-
         }
-
     }
 
     function getStatusClass(status) {
-
         switch (status) {
-
             case "paid":
                 return "bg-green-100 text-green-700";
 
@@ -199,75 +181,50 @@ export default function DashboardPage() {
 
             default:
                 return "bg-slate-100 text-slate-600";
-
         }
-
     }
 
     if (loading) {
-
         return (
-
             <div className="flex min-h-[500px] items-center justify-center">
-
                 <div className="text-center">
-
                     <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
 
                     <p className="font-semibold text-slate-600">
-
                         Chargement du tableau de bord...
-
                     </p>
-
                 </div>
-
             </div>
-
         );
-
     }
 
     if (!dashboard) {
-
         return (
-
             <div className="rounded-3xl border border-red-100 bg-white p-16 text-center shadow-sm">
-
                 <h2 className="text-3xl font-extrabold text-red-600">
-
                     Impossible de charger le Dashboard
-
                 </h2>
 
                 <p className="mt-3 text-slate-500">
-
                     Vérifiez la connexion avec le serveur.
-
                 </p>
 
                 <button
                     onClick={() => loadDashboard()}
                     className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
                 >
-
                     <RefreshCw size={18} />
 
                     Réessayer
-
                 </button>
-
             </div>
-
         );
-
     }
 
     const statistics = dashboard.statistics ?? {};
     const finance = dashboard.finance ?? {};
 
     const statsCards = [
-
         {
             title: "Étudiants",
             value: statistics.students ?? 0,
@@ -275,7 +232,6 @@ export default function DashboardPage() {
             icon: Users,
             gradient: "from-blue-500 to-cyan-500",
         },
-
         {
             title: "Formations",
             value: statistics.trainings ?? 0,
@@ -283,7 +239,6 @@ export default function DashboardPage() {
             icon: GraduationCap,
             gradient: "from-violet-500 to-purple-500",
         },
-
         {
             title: "Inscriptions",
             value: statistics.enrollments ?? 0,
@@ -291,7 +246,6 @@ export default function DashboardPage() {
             icon: BookOpen,
             gradient: "from-orange-500 to-amber-500",
         },
-
         {
             title: "Taux de paiement",
             value: `${Number(
@@ -301,11 +255,9 @@ export default function DashboardPage() {
             icon: TrendingUp,
             gradient: "from-emerald-500 to-green-500",
         },
-
     ];
 
     return (
-
         <div className="space-y-8 pb-12">
 
             {/* =====================================================
@@ -321,29 +273,21 @@ export default function DashboardPage() {
                 <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
 
                     <div>
-
                         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-100">
-
                             <CalendarDays size={17} />
 
                             Vue générale du centre
-
                         </div>
 
                         <h1 className="text-4xl font-black tracking-tight md:text-5xl">
-
                             Dashboard
-
                         </h1>
 
                         <p className="mt-3 max-w-2xl text-lg leading-relaxed text-blue-100">
-
                             Suivez en temps réel les étudiants,
                             formations, inscriptions et finances
                             de votre centre.
-
                         </p>
-
                     </div>
 
                     <button
@@ -351,7 +295,6 @@ export default function DashboardPage() {
                         disabled={refreshing}
                         className="relative inline-flex items-center justify-center gap-3 rounded-2xl bg-white px-7 py-4 font-bold text-blue-700 shadow-lg transition hover:scale-[1.02] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
                     >
-
                         <RefreshCw
                             size={20}
                             className={
@@ -364,11 +307,8 @@ export default function DashboardPage() {
                         {refreshing
                             ? "Actualisation..."
                             : "Actualiser"}
-
                     </button>
-
                 </div>
-
             </section>
 
             {/* =====================================================
@@ -378,16 +318,13 @@ export default function DashboardPage() {
             <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
 
                 {statsCards.map((card) => {
-
                     const Icon = card.icon;
 
                     return (
-
                         <div
                             key={card.title}
                             className="relative overflow-hidden rounded-[1.7rem] border border-slate-100 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                         >
-
                             <div
                                 className={`absolute left-0 right-0 top-0 h-1.5 bg-gradient-to-r ${card.gradient}`}
                             />
@@ -395,41 +332,27 @@ export default function DashboardPage() {
                             <div className="flex items-center justify-between">
 
                                 <div>
-
                                     <p className="text-sm font-medium text-slate-500">
-
                                         {card.title}
-
                                     </p>
 
                                     <h2 className="mt-3 text-3xl font-black text-slate-900">
-
                                         {card.value}
-
                                     </h2>
 
                                     <p className="mt-2 text-xs text-slate-400">
-
                                         {card.subtitle}
-
                                     </p>
-
                                 </div>
 
                                 <div
                                     className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${card.gradient} text-white shadow-lg`}
                                 >
-
                                     <Icon size={25} />
-
                                 </div>
-
                             </div>
-
                         </div>
-
                     );
-
                 })}
 
             </section>
@@ -443,26 +366,19 @@ export default function DashboardPage() {
                 <div className="mb-5 flex items-center justify-between">
 
                     <div>
-
                         <h2 className="text-2xl font-black text-slate-900">
-
                             Situation financière
-
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-
                             Vue synthétique des finances du centre.
-
                         </p>
-
                     </div>
 
                     <Wallet
                         className="text-slate-400"
                         size={26}
                     />
-
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -504,7 +420,6 @@ export default function DashboardPage() {
                     />
 
                 </div>
-
             </section>
 
             {/* =====================================================
@@ -518,70 +433,63 @@ export default function DashboardPage() {
                     <div className="mb-5 flex items-start justify-between">
 
                         <div>
-
                             <h2 className="text-2xl font-black text-slate-900">
-
                                 Évolution des paiements
-
                             </h2>
 
                             <p className="mt-1 text-sm text-slate-500">
-
                                 Paiements enregistrés par mois.
-
                             </p>
-
                         </div>
 
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-
                             <TrendingUp size={23} />
-
                         </div>
-
                     </div>
 
                     <PaymentsChart
                         data={paymentsChart}
                     />
-
                 </div>
 
                 <div className="rounded-[1.7rem] border border-slate-200 bg-white p-7 shadow-sm">
 
                     <div className="mb-6">
-
                         <h2 className="text-2xl font-black text-slate-900">
-
                             Inscriptions
-
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-
                             Répartition par statut.
-
                         </p>
-
                     </div>
 
                     <StatusRow
                         label="En attente"
-                        value={statistics.pending_enrollments ?? 0}
+                        value={
+                            statistics.pending_enrollments ??
+                            0
+                        }
                         icon="!"
                         className="bg-red-100 text-red-600"
                     />
 
                     <StatusRow
                         label="Paiement partiel"
-                        value={statistics.partial_enrollments ?? 0}
+                        value={
+                            statistics.partial_enrollments ??
+                            0
+                        }
                         icon="▣"
                         className="bg-orange-100 text-orange-600"
                     />
 
                     <StatusRow
                         label="Soldées"
-                        value={statistics.paid_enrollments ?? 0}
+                        value={
+                            statistics.paid_enrollments ??
+                            0
+                        }
                         icon="✓"
                         className="bg-green-100 text-green-600"
                     />
@@ -589,19 +497,14 @@ export default function DashboardPage() {
                     <div className="mt-5 rounded-2xl bg-slate-50 p-5">
 
                         <p className="text-sm text-slate-500">
-
                             Étudiants avec un solde
-
                         </p>
 
                         <p className="mt-2 text-3xl font-black text-slate-900">
-
-                            {statistics.students_with_balance ?? 0}
-
+                            {statistics.students_with_balance ??
+                                0}
                         </p>
-
                     </div>
-
                 </div>
 
             </section>
@@ -623,7 +526,6 @@ export default function DashboardPage() {
                     <table className="w-full min-w-[850px]">
 
                         <thead>
-
                             <tr className="border-b bg-slate-50 text-left text-sm text-slate-500">
 
                                 <th className="px-7 py-4 font-semibold">
@@ -651,7 +553,6 @@ export default function DashboardPage() {
                                 </th>
 
                             </tr>
-
                         </thead>
 
                         <tbody>
@@ -667,7 +568,6 @@ export default function DashboardPage() {
 
                                 latestEnrollments.map(
                                     (enrollment) => (
-
                                         <tr
                                             key={enrollment.id}
                                             className="border-b last:border-0 hover:bg-slate-50"
@@ -709,7 +609,9 @@ export default function DashboardPage() {
 
                                             <td className="px-5 py-5 font-medium text-slate-700">
 
-                                                {enrollment.training?.title ?? "—"}
+                                                {getTrainingNames(
+                                                    enrollment
+                                                )}
 
                                             </td>
 
@@ -744,17 +646,14 @@ export default function DashboardPage() {
                                                         enrollment.status
                                                     )}`}
                                                 >
-
                                                     {getStatusLabel(
                                                         enrollment.status
                                                     )}
-
                                                 </span>
 
                                             </td>
 
                                         </tr>
-
                                     )
                                 )
 
@@ -763,7 +662,6 @@ export default function DashboardPage() {
                         </tbody>
 
                     </table>
-
                 </div>
 
             </DashboardSection>
@@ -794,7 +692,6 @@ export default function DashboardPage() {
                                 payment.enrollment?.student;
 
                             return (
-
                                 <div
                                     key={payment.id}
                                     className="flex flex-col gap-4 px-7 py-5 md:flex-row md:items-center md:justify-between"
@@ -839,7 +736,8 @@ export default function DashboardPage() {
 
                                         <p className="font-black text-green-600">
 
-                                            + {formatMoney(
+                                            +{" "}
+                                            {formatMoney(
                                                 payment.amount
                                             )}
 
@@ -856,11 +754,8 @@ export default function DashboardPage() {
                                     </div>
 
                                 </div>
-
                             );
-
                         })
-
                     )}
 
                 </div>
@@ -933,16 +828,15 @@ export default function DashboardPage() {
 
                                     <p className="font-black text-red-600">
 
-                                        - {formatMoney(
+                                        -{" "}
+                                        {formatMoney(
                                             expense.amount
                                         )}
 
                                     </p>
 
                                 </div>
-
                             ))
-
                         )}
 
                     </div>
@@ -971,7 +865,6 @@ export default function DashboardPage() {
                                         "Entrée";
 
                                     return (
-
                                         <div
                                             key={transaction.id}
                                             className="flex items-center justify-between gap-4 px-7 py-5"
@@ -1034,7 +927,9 @@ export default function DashboardPage() {
                                                 }`}
                                             >
 
-                                                {income ? "+" : "-"}
+                                                {income
+                                                    ? "+"
+                                                    : "-"}
 
                                                 {" "}
 
@@ -1045,12 +940,9 @@ export default function DashboardPage() {
                                             </p>
 
                                         </div>
-
                                     );
-
                                 }
                             )
-
                         )}
 
                     </div>
@@ -1095,9 +987,7 @@ export default function DashboardPage() {
             </section>
 
         </div>
-
     );
-
 }
 
 
@@ -1111,23 +1001,17 @@ function FinanceCard({
     icon: Icon,
     iconClass,
 }) {
-
     return (
-
         <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
 
             <div>
 
                 <p className="text-sm text-slate-500">
-
                     {title}
-
                 </p>
 
                 <p className="mt-2 text-xl font-black text-slate-900">
-
                     {value}
-
                 </p>
 
             </div>
@@ -1135,15 +1019,11 @@ function FinanceCard({
             <div
                 className={`flex h-14 w-14 items-center justify-center rounded-2xl ${iconClass}`}
             >
-
                 <Icon size={24} />
-
             </div>
 
         </div>
-
     );
-
 }
 
 
@@ -1157,9 +1037,7 @@ function StatusRow({
     icon,
     className,
 }) {
-
     return (
-
         <div className="mb-4 flex items-center justify-between rounded-2xl border border-slate-100 p-4">
 
             <div className="flex items-center gap-3">
@@ -1167,29 +1045,21 @@ function StatusRow({
                 <div
                     className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold ${className}`}
                 >
-
                     {icon}
-
                 </div>
 
                 <span className="font-semibold text-slate-700">
-
                     {label}
-
                 </span>
 
             </div>
 
             <span className="text-lg font-black text-slate-900">
-
                 {value}
-
             </span>
 
         </div>
-
     );
-
 }
 
 
@@ -1205,9 +1075,7 @@ function DashboardSection({
     actionLink,
     children,
 }) {
-
     return (
-
         <section className="overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white shadow-sm">
 
             <div className="flex items-center justify-between border-b border-slate-100 px-7 py-6">
@@ -1215,48 +1083,32 @@ function DashboardSection({
                 <div className="flex items-center gap-4">
 
                     <div>
-
                         <h2 className="text-2xl font-black text-slate-900">
-
                             {title}
-
                         </h2>
 
                         <p className="mt-1 text-sm text-slate-500">
-
                             {subtitle}
-
                         </p>
-
                     </div>
 
                 </div>
 
                 {actionText && actionLink ? (
-
                     <a
                         href={actionLink}
                         className="hidden items-center gap-2 rounded-xl bg-slate-50 px-4 py-2 text-sm font-bold text-blue-600 transition hover:bg-blue-50 md:inline-flex"
                     >
-
                         {actionText}
 
                         <Eye size={16} />
-
                     </a>
-
                 ) : (
-
                     Icon && (
-
                         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
-
                             <Icon size={21} />
-
                         </div>
-
                     )
-
                 )}
 
             </div>
@@ -1264,9 +1116,7 @@ function DashboardSection({
             {children}
 
         </section>
-
     );
-
 }
 
 
@@ -1280,29 +1130,21 @@ function MiniFinanceCard({
     subtitle,
     icon: Icon,
 }) {
-
     return (
-
         <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
 
             <div>
 
                 <p className="text-sm text-slate-500">
-
                     {title}
-
                 </p>
 
                 <p className="mt-2 text-2xl font-black text-slate-900">
-
                     {value}
-
                 </p>
 
                 <p className="mt-1 text-xs text-slate-400">
-
                     {subtitle}
-
                 </p>
 
             </div>
@@ -1314,9 +1156,7 @@ function MiniFinanceCard({
             </div>
 
         </div>
-
     );
-
 }
 
 
@@ -1325,17 +1165,11 @@ function MiniFinanceCard({
 ================================================================ */
 
 function EmptyState({ text }) {
-
     return (
-
         <div className="px-7 py-12 text-center text-sm text-slate-400">
-
             {text}
-
         </div>
-
     );
-
 }
 
 
@@ -1347,22 +1181,14 @@ function EmptyRow({
     colSpan,
     text,
 }) {
-
     return (
-
         <tr>
-
             <td
                 colSpan={colSpan}
                 className="px-7 py-12 text-center text-sm text-slate-400"
             >
-
                 {text}
-
             </td>
-
         </tr>
-
     );
-
 }

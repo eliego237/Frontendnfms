@@ -6,159 +6,122 @@ import {
 } from "lucide-react";
 
 export default function PaymentStepper({
-
-    step,
-
+    currentStep,
 }) {
-
     const steps = [
-
         {
-
             id: 1,
-
             title: "Inscription",
-
             icon: GraduationCap,
-
         },
-
         {
-
             id: 2,
-
             title: "Vérification",
-
             icon: Wallet,
-
         },
-
         {
-
             id: 3,
-
             title: "Paiement",
-
             icon: CreditCard,
-
         },
-
     ];
 
     return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
 
-        <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center justify-between">
 
-            <div className="flex justify-between items-center">
+                {steps.map((item, index) => {
+                    const Icon = item.icon;
 
-                {steps.map((item,index)=>{
+                    const active =
+                        currentStep === item.id;
 
-                    const Icon=item.icon;
+                    const completed =
+                        currentStep > item.id;
 
-                    const active=step===item.id;
-
-                    const completed=step>item.id;
-
-                    return(
-
+                    return (
                         <div
-
                             key={item.id}
-
-                            className="flex items-center flex-1"
-
+                            className="flex flex-1 items-center"
                         >
 
-                            <div className="flex flex-col items-center">
+                            {/* ÉTAPE */}
+
+                            <div className="flex min-w-[90px] flex-col items-center">
 
                                 <div
-
                                     className={`
-
                                         flex
-
                                         h-14
-
                                         w-14
-
                                         items-center
-
                                         justify-center
-
                                         rounded-full
-
-                                        transition
-
-                                        ${completed
-
-                                            ?"bg-green-600 text-white"
-
-                                            :active
-
-                                            ?"bg-blue-600 text-white"
-
-                                            :"bg-slate-200 text-slate-500"}
-
+                                        transition-all
+                                        duration-300
+                                        ${
+                                            completed
+                                                ? "bg-green-600 text-white shadow-md"
+                                                : active
+                                                ? "bg-blue-600 text-white shadow-md"
+                                                : "bg-slate-200 text-slate-500"
+                                        }
                                     `}
-
                                 >
-
                                     {completed ? (
-
-                                        <CheckCircle2 size={24}/>
-
+                                        <CheckCircle2
+                                            size={24}
+                                        />
                                     ) : (
-
-                                        <Icon size={24}/>
-
+                                        <Icon
+                                            size={24}
+                                        />
                                     )}
-
                                 </div>
 
-                                <span className="mt-3 font-semibold text-sm">
-
+                                <span
+                                    className={`
+                                        mt-3 text-sm font-semibold
+                                        ${
+                                            active
+                                                ? "text-blue-700"
+                                                : completed
+                                                ? "text-green-700"
+                                                : "text-slate-500"
+                                        }
+                                    `}
+                                >
                                     {item.title}
-
                                 </span>
 
                             </div>
 
-                            {index<steps.length-1 && (
+                            {/* LIGNE */}
 
+                            {index <
+                                steps.length - 1 && (
                                 <div
-
                                     className={`
-
-                                        h-1
-
-                                        flex-1
-
-                                        mx-4
-
-                                        rounded
-
-                                        ${completed
-
-                                            ?"bg-green-500"
-
-                                            :"bg-slate-200"}
-
+                                        mx-4 h-1 flex-1 rounded-full
+                                        transition-all
+                                        duration-500
+                                        ${
+                                            currentStep >
+                                            item.id
+                                                ? "bg-green-500"
+                                                : "bg-slate-200"
+                                        }
                                     `}
-
                                 />
-
                             )}
 
                         </div>
-
                     );
-
                 })}
 
             </div>
 
         </div>
-
     );
-
 }

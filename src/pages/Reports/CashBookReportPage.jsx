@@ -112,260 +112,197 @@ export default function CashBookReportPage() {
     |--------------------------------------------------------------------------
     */
 
-    const loadCashBook = useCallback(async () => {
 
-        try {
+const loadCashBook = useCallback(async () => {
+    try {
+        setLoading(true);
 
-            setLoading(true);
+        const baseParams = {};
 
-            const params = {};
+        if (dateFrom) baseParams.date_from = dateFrom;
+        if (dateTo) baseParams.date_to = dateTo;
 
-            if (dateFrom) {
-                params.date_from = dateFrom;
-            }
+        /*
+         * Récupérer toutes les pages d'un endpoint paginé.
+         */
+        const fetchAllPages = async (url, extraParams = {}) => {
+            const allItems = [];
+            let page = 1;
+            let lastPage = 1;
 
-            if (dateTo) {
-                params.date_to = dateTo;
-            }
+            do {
+                const response = await api.get(url, {
+                    params: {
+                        ...baseParams,
+                        ...extraParams,
+                        page,
+                        per_page: 100,
+                    },
+                });
 
-            const [
-                paymentsResponse,
-                expensesResponse,
-            ] = await Promise.all([
-                api.get("/reports/payments", {
-                    params,
-                }),
+                const root = response?.data?.data ?? response?.data ?? {};
 
-                api.get("/expenses", {
-                    params,
-                }),
-            ]);
+                // Accepte une réponse sous forme de tableau
+                // ou un paginateur Laravel.
+                let paginator = root;
 
-            /*
-            |--------------------------------------------------------------------------
-            | PAIEMENTS
-            |--------------------------------------------------------------------------
-            */
+                if (url === "/reports/payments") {
+                    paginator = root?.payments ?? {};
+                }
 
-            const paymentReport =
-                paymentsResponse?.data?.data ?? {};
+                const items = Array.isArray(paginator)
+                    ? paginator
+                    : Array.isArray(paginator?.data)
+                        ? paginator.data
+                        : Array.isArray(root?.data)
+                            ? root.data
+                            : [];
 
-            const paymentList =
-                paymentReport?.payments?.data ?? [];
+                allItems.push(...items);
 
-            /*
-            |--------------------------------------------------------------------------
-            | DÉPENSES
-            |--------------------------------------------------------------------------
-            */
-
-            const expenseList =
-                expensesResponse?.data?.data ?? [];
-
-            /*
-            |--------------------------------------------------------------------------
-            | TRANSFORMER LES ENTRÉES
-            |--------------------------------------------------------------------------
-            */
-
-            const entries = paymentList.map((payment) => {
-
-                const student =
-                    payment?.enrollment?.student;
-
-                const training =
-                    payment?.enrollment?.training;
-
-                const studentName = [
-                    student?.first_name,
-                    student?.last_name,
-                ]
-                    .filter(Boolean)
-                    .join(" ");
-
-                return {
-
-                    id: `payment-${payment.id}`,
-
-                    number:
-                        payment?.receipt_number ??
-                        `REC-${payment?.id ?? "—"}`,
-
-                    date:
-                        payment?.payment_date ??
-                        payment?.created_at,
-
-                    type: "Entrée",
-
-                    description:
-                        studentName
-                            ? `Paiement de ${studentName}`
-                            : "Paiement étudiant",
-
-                    student:
-                        studentName || "Étudiant inconnu",
-
-                    training:
-                        training?.title ??
-                        training?.name ??
-                        "—",
-
-                    category:
-                        "Paiement formation",
-
-                    paymentMethod:
-                        payment?.payment_method?.name ??
-                        payment?.paymentMethod?.name ??
-                        "—",
-
-                    amount:
-                        Number(payment?.amount ?? 0),
-
-                    reference:
-                        payment?.reference ??
-                        "—",
-
-                    source: "payment",
-
-                    original: payment,
-                };
-
-            });
-
-            /*
-            |--------------------------------------------------------------------------
-            | TRANSFORMER LES SORTIES
-            |--------------------------------------------------------------------------
-            */
-
-            const exits = expenseList.map((expense) => {
-
-                return {
-
-                    id: `expense-${expense.id}`,
-
-                    number:
-                        expense?.expense_number ??
-                        `EXP-${expense?.id ?? "—"}`,
-
-                    date:
-                        expense?.expense_date ??
-                        expense?.created_at,
-
-                    type: "Sortie",
-
-                    description:
-                        expense?.title ??
-                        expense?.description ??
-                        "Dépense",
-
-                    student: "—",
-
-                    training: "—",
-
-                    category:
-                        expense?.category ??
-                        "Dépense",
-
-                    paymentMethod:
-                        expense?.payment_method?.name ??
-                        expense?.paymentMethod?.name ??
-                        "—",
-
-                    amount:
-                        Number(expense?.amount ?? 0),
-
-                    reference:
-                        expense?.reference ??
-                        "—",
-
-                    source: "expense",
-
-                    original: expense,
-                };
-
-            });
-
-            /*
-            |--------------------------------------------------------------------------
-            | FUSION DES TRANSACTIONS
-            |--------------------------------------------------------------------------
-            */
-
-            const mergedTransactions = [
-                ...entries,
-                ...exits,
-            ].sort((a, b) => {
-
-                const dateA =
-                    new Date(a.date || 0).getTime();
-
-                const dateB =
-                    new Date(b.date || 0).getTime();
-
-                return dateB - dateA;
-
-            });
-
-            setTransactions(mergedTransactions);
-
-            /*
-            |--------------------------------------------------------------------------
-            | STATISTIQUES
-            |--------------------------------------------------------------------------
-            */
-
-            const totalEntries =
-                entries.reduce(
-                    (total, transaction) =>
-                        total + transaction.amount,
-                    0
+                lastPage = Number(
+                    Array.isArray(paginator)
+                        ? 1
+                        : paginator?.last_page ?? 1
                 );
 
-            const totalExits =
-                exits.reduce(
-                    (total, transaction) =>
-                        total + transaction.amount,
-                    0
-                );
+                if (!items.length || page >= lastPage) {
+                    break;
+                }
 
-            setStats({
+                page += 1;
+            } while (page <= lastPage);
 
-                totalEntries,
+            return allItems;
+        };
 
-                totalExits,
+        const [paymentList, expenseList] = await Promise.all([
+            fetchAllPages("/reports/payments"),
+            fetchAllPages("/expenses"),
+        ]);
 
-                balance:
-                    totalEntries - totalExits,
+        /*
+         * Transformer les paiements en entrées.
+         */
+        const entries = paymentList.map((payment) => {
+            const student = payment?.enrollment?.student;
 
-                transactionCount:
-                    mergedTransactions.length,
+            const trainings = payment?.enrollment?.trainings;
+            const training = payment?.enrollment?.training;
 
-            });
+            const trainingName =
+                Array.isArray(trainings) && trainings.length
+                    ? trainings
+                        .map((item) => item?.title ?? item?.name)
+                        .filter(Boolean)
+                        .join(", ")
+                    : training?.title ?? training?.name ?? "—";
 
-        } catch (error) {
+            const studentName = [
+                student?.first_name,
+                student?.last_name,
+            ].filter(Boolean).join(" ");
 
-            console.error(
-                "Erreur chargement livre de caisse :",
-                error?.response?.data ?? error
-            );
+            return {
+                id: `payment-${payment.id}`,
+                number: payment?.receipt_number ?? `REC-${payment.id}`,
+                date: payment?.payment_date ?? payment?.created_at,
+                type: "Entrée",
+                description: studentName
+                    ? `Paiement de ${studentName}`
+                    : "Paiement étudiant",
+                student: studentName || "Étudiant inconnu",
+                training: trainingName,
+                category: "Paiement formation",
+                paymentMethod:
+                    payment?.payment_method?.name ??
+                    payment?.paymentMethod?.name ??
+                    "—",
+                amount: Number(payment?.amount ?? 0),
+                reference: payment?.reference ?? "—",
+                source: "payment",
+                original: payment,
+            };
+        });
 
-            setTransactions([]);
+        /*
+         * Transformer les dépenses en sorties.
+         */
+        const exits = expenseList.map((expense) => ({
+            id: `expense-${expense.id}`,
+            number: expense?.expense_number ?? `EXP-${expense.id}`,
+            date: expense?.expense_date ?? expense?.created_at,
+            type: "Sortie",
+            description:
+                expense?.title ?? expense?.description ?? "Dépense",
+            student: "—",
+            training: "—",
+            category: expense?.category ?? "Dépense",
+            paymentMethod:
+                expense?.payment_method?.name ??
+                expense?.paymentMethod?.name ??
+                "—",
+            amount: Number(expense?.amount ?? 0),
+            reference: expense?.reference ?? "—",
+            source: "expense",
+            original: expense,
+        }));
 
-            setStats({
-                totalEntries: 0,
-                totalExits: 0,
-                balance: 0,
-                transactionCount: 0,
-            });
+        /*
+         * Fusionner et trier toutes les transactions.
+         */
+        const mergedTransactions = [...entries, ...exits].sort(
+            (a, b) =>
+                new Date(b.date || 0).getTime() -
+                new Date(a.date || 0).getTime()
+        );
 
-        } finally {
+        setTransactions(mergedTransactions);
 
-            setLoading(false);
+        /*
+         * Calculer les recettes, dépenses et solde.
+         */
+        const totalEntries = entries.reduce(
+            (sum, item) => sum + item.amount,
+            0
+        );
 
-        }
+        const totalExits = exits.reduce(
+            (sum, item) => sum + item.amount,
+            0
+        );
 
-    }, [dateFrom, dateTo]);
+        setStats({
+            totalEntries,
+            totalExits,
+            balance: totalEntries - totalExits,
+            transactionCount: mergedTransactions.length,
+        });
+
+        console.log("Paiements récupérés :", paymentList.length);
+        console.log("Recettes du livre de caisse :", totalEntries);
+        console.log("Dépenses récupérées :", expenseList.length);
+        console.log("Total des sorties :", totalExits);
+
+    } catch (error) {
+        console.error(
+            "Erreur chargement livre de caisse :",
+            error?.response?.data ?? error
+        );
+
+        setTransactions([]);
+
+        setStats({
+            totalEntries: 0,
+            totalExits: 0,
+            balance: 0,
+            transactionCount: 0,
+        });
+    } finally {
+        setLoading(false);
+    }
+}, [dateFrom, dateTo]);
+
 
     /*
     |--------------------------------------------------------------------------
